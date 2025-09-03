@@ -1,2 +1,1 @@
-
-const DBURL = process.env.DATABASE_URL || "postgresql://postgres:12345@localhost:5432/promptlyblog?schema=public"
+const DBURL = process.env.DATABASE_URL || "postgresql://postgres:mysecretpassword@localhost:5432/postgres"
