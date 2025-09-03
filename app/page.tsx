@@ -3,7 +3,7 @@ import { createUser, getUsers } from '@/actions/todoAction';
 import React from 'react'
 
 const HomePage = async () => {
-  let users = [];
+  let users = [] as Array<{ id: number; name: string; email: string }>;
   try {
     // await createUser("John Doe", "john@example.com");
     // await createUser("Jane Doe", "jane@example.com");
