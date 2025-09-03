@@ -1,11 +1,17 @@
 // "use client";
+import { createUser, getUsers } from '@/actions/todoAction';
 import React from 'react'
-import { addTodo, getData } from '@/actions/todoAction';
 
-const HomePage = () => {
-  addTodo(1, "Sample Todo");
-  addTodo(2, "Another Todo");
-  const todo = getData();
+const HomePage = async () => {
+  let users = [];
+  try {
+    // await createUser("John Doe", "john@example.com");
+    // await createUser("Jane Doe", "jane@example.com");
+    users = await getUsers();
+    console.log(`users: ${JSON.stringify(users)}`);
+  } catch (error) {
+    console.error(`Error occurred: ${error}`);
+  }
   return (
     <div>
       {/* <header className="flex justify-end items-center p-4 gap-4 h-16">
@@ -23,9 +29,13 @@ const HomePage = () => {
       </header> */}
       <h1 className='text-4xl font-bold'>Welcome to My Blog</h1>
       <p className='text-lg'>This is the home page of my blog app.</p>
-      <p className='mt-4'>{JSON.stringify(todo)}</p>
-      
-      
+      Users:
+      <p className='mt-4'>{users.length === 0 ? 'No users found.' : users.map(user => (
+        <div key={user.id}>
+          <h2 className='text-xl font-semibold'>{user.name}</h2>
+          <p className='text-gray-600'>{user.email}</p>
+        </div>
+      ))}</p>
     </div>
   )
 }

@@ -1,16 +1,16 @@
-// drizzle.config.ts
-import type { Config } from "drizzle-kit";
+import { defineConfig } from "drizzle-kit";
+import "dotenv/config";
 
-export default {
-    schema: "./db/schema",
-    out: "./drizzle/migrations",
+// if (!process.env.DATABASE_URL) {
+//     throw new Error("DATABASE_URL is not defined");
+// }
+
+export default defineConfig({
     dialect: "postgresql",
+    schema: "./db/schema.ts",
+    out: "./db/migrations",
     dbCredentials: {
-        host: process.env.DB_HOST!,
-        user: process.env.DB_USER!,
-        password: process.env.DB_PASSWORD!,
-        database: process.env.DB_NAME!,
+        url: process.env.DATABASE_URL || "postgresql://postgres:12345@localhost:5432/promptlyblog",
         ssl: true
-        // Optionally add: port: Number(process.env.DB_PORT), ssl: true
-    },
-} satisfies Config;
+    }
+});
