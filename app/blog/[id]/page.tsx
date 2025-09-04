@@ -93,13 +93,12 @@ const BlogPage = async ({ params }: BlogPageProps) => {
     const { id } = await params;
     const post = await getBlogData(id);
 
-    // Return 404 if post not found or not published (depending on your requirements)
+    // Return 404 if post not found or not published
     if (!post) {
         notFound();
     }
 
     // if (post.status !== 'published' || post.visibility !== 'public') {
-    //     // You might want to check user permissions here
     //     notFound();
     // }
 

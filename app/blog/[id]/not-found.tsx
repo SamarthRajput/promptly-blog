@@ -59,36 +59,6 @@ export default function BlogNotFound() {
                             Go to Homepage
                         </Link>
                     </div>
-
-                    {/* Additional Help */}
-                    {/* <div className="mt-8 pt-6 border-t border-gray-200">
-                        <p className="text-sm text-gray-500 mb-4">
-                            Looking for something specific?
-                        </p>
-
-                        <div className="space-y-2">
-                            <Link
-                                href="/blog/categories"
-                                className="text-blue-600 hover:text-blue-800 text-sm underline block"
-                            >
-                                Browse by Category
-                            </Link>
-
-                            <Link
-                                href="/search"
-                                className="text-blue-600 hover:text-blue-800 text-sm underline block"
-                            >
-                                Search Our Blog
-                            </Link>
-
-                            <Link
-                                href="/contact"
-                                className="text-blue-600 hover:text-blue-800 text-sm underline block"
-                            >
-                                Contact Support
-                            </Link>
-                        </div>
-                    </div> */}
                 </div>
             </div>
         </div>

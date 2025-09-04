@@ -29,7 +29,6 @@ interface PostsQueryParams {
     sortOrder?: 'asc' | 'desc';
 }
 
-// Utility functions
 const generateSlug = async (title: string, excludeId?: string): Promise<string> => {
     let baseSlug = title
         .toLowerCase()
