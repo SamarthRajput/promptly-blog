@@ -13,7 +13,7 @@ export async function syncUser() {
     if (existing.length === 0) {
         // if not, create new
         await db.insert(user).values({
-            id: clerkUser.id, // likely your PK
+            clerkId: clerkUser.id,
             name: `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`,
             email: clerkUser.emailAddresses[0]?.emailAddress ?? "",
             avatarUrl: clerkUser.imageUrl ?? null
