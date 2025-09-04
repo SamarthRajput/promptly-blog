@@ -1,4 +1,5 @@
 // "use client";
+import { syncUser } from '@/actions/syncUser';
 import { createUser, getUsers } from '@/actions/todoAction';
 import React from 'react'
 
@@ -16,6 +17,7 @@ const HomePage = async () => {
     deletedAt: Date | null;
   }>;
   try {
+    syncUser();
     // await createUser("John Doe", "john@example.com", "someClerkId");
     // await createUser("Jane Doe", "jane@example.com");
     users = await getUsers();
@@ -44,7 +46,11 @@ const HomePage = async () => {
       <p className='mt-4'>{users.length === 0 ? 'No users found.' : users.map(user => (
         <div key={user.id}>
           <h2 className='text-xl font-semibold'>{user.name}</h2>
-          <p className='text-gray-600'>{user.email}</p>
+          <p className='text-gray-600'>Email: {user.email}</p>
+          <p className='text-gray-600'>Bio: {user.bio}</p>
+          <p className='text-gray-600'>Avatar URL: {user.avatarUrl}</p>
+          <p className='text-gray-600'>Clerk ID: {user.clerkId}</p>
+          <img src={user.avatarUrl ?? undefined} alt={`${user.name}'s avatar`} width={100} height={100} />
           {/* Optionally display more user info if needed */}
         </div>
       ))}</p>
