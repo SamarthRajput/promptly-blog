@@ -1,6 +1,6 @@
 import { media, posts, user } from "@/db/schema";
 import { db } from "@/lib/db";
-import { calculateReadingTime, calculateWordCount, generateExcerpt } from "@/utils/helper-blog";
+import { calculateReadingTime, calculateWordCount, checkAndMakeValidSlug, generateExcerpt } from "@/utils/helper-blog";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq, and, isNull, desc, asc } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Generate unique slug
-        const finalSlug = providedSlug || await generateSlug(title);
+        const finalSlug = checkAndMakeValidSlug(providedSlug) || await generateSlug(title);
 
         // Calculate content metrics
         const wordCount = calculateWordCount(contentMd);

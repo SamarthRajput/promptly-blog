@@ -1,25 +1,26 @@
 "use client";
-import React from 'react'
+import React from 'react';
+import { useState } from "react";
+import { toast } from 'sonner';
 
-interface FormData {
-    title: string;
-    contentMd: string;
-    excerpt: string;
-    slug: string;
-}
-const Write = () => {
-    const [formData, setFormData] = React.useState<FormData>({
-        title: '',
-        contentMd: '',
-        excerpt: '',
-        slug: ''
+export default function BlogEditor({ post }: { post?: any }) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [formData, setFormData] = useState({
+        title: post?.title || "",
+        slug: post?.slug || "",
+        excerpt: post?.excerpt || "",
+        contentMd: post?.contentMd || "",
+        coverImageId: post?.coverImageId || "",
+        metaTitle: post?.metaTitle || "",
+        metaDescription: post?.metaDescription || "",
+        status: post?.status || "draft",
+        visibility: post?.visibility || "public",
+        scheduledAt: post?.scheduledAt || "",
     });
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const [error, setError] = React.useState<string | null>(null);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+    const handleChange = (e: any) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -28,7 +29,13 @@ const Write = () => {
         setError(null);
 
         try {
-            const response = await fetch('/api/write', {
+            if (!formData.title || !formData.contentMd) {
+                throw new Error("Title and content are required.");
+            }
+            if (formData.status === "scheduled" && !formData.scheduledAt) {
+                throw new Error("Scheduled date and time are required for scheduled posts.");
+            }
+            const response = await fetch('/api/blog', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -41,84 +48,61 @@ const Write = () => {
             }
 
             const data = await response.json();
-            console.log('Post created successfully:', data);
+            toast.success('Post created successfully!', {
+                description: "Your post has been created and is now live.",
+                action: { label: 'View Post', onClick: () => { window.location.href = `/blog/${data.slug}`; } }
+            });
+            setFormData({ title: "", slug: "", excerpt: "", contentMd: "", coverImageId: "", metaTitle: "", metaDescription: "", status: "draft", visibility: "public", scheduledAt: "" });
         } catch (error: any) {
-            console.error('Error creating post:', error);
-            setError(error.message);
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+            toast.error(errorMessage, {
+                description: "Please try again later or contact support if the issue persists.",
+                action: {
+                    label: 'Retry',
+                    onClick: () => {
+                        handleSubmit(e);
+                    }
+                }
+            });
+            setError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
     };
-
     return (
-        <div>
-            <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-4">
-                <div className="mb-4">
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                        Title
-                    </label>
-                    <input
-                        type="text"
-                        name="title"
-                        id="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                        required
-                    />
-                </div>
-                <div className="mb-4">
-                    <label htmlFor="contentMd" className="block text-sm font-medium text-gray-700">
-                        Content
-                    </label>
-                    <textarea
-                        name="contentMd"
-                        id="contentMd"
-                        value={formData.contentMd}
-                        onChange={handleChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                        rows={4}
-                        required
-                    />
-                </div>
-                <div className="mb-4">
-                    <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700">
-                        Excerpt
-                    </label>
-                    <textarea
-                        name="excerpt"
-                        id="excerpt"
-                        value={formData.excerpt}
-                        onChange={handleChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                        rows={2}
-                    />
-                </div>
-
-                <div className="mb-4">
-                    <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-                        Slug
-                    </label>
-                    <input
-                        type="text"
-                        name="slug"
-                        id="slug"
-                        value={formData.slug}
-                        onChange={handleChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                    />
-                </div>
-                {error && <p className="text-red-500 text-sm">{error}</p>}
-                <button
-                    type="submit"
-                    className="mt-4 w-full bg-blue-600 text-white p-2 rounded-md"
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? 'Creating...' : 'Create Post'}
-                </button>
-            </form>
-        </div>
-    )
+        <form className="space-y-4" onSubmit={handleSubmit}>
+            {error && <p className="text-red-500">{error}</p>}
+            <input
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="Title"
+                className="w-full border p-2 rounded"
+            />
+            <textarea
+                name="contentMd"
+                value={formData.contentMd}
+                onChange={handleChange}
+                placeholder="Write markdown..."
+                className="w-full border p-2 rounded h-64"
+            />
+            <select name="status" value={formData.status} onChange={handleChange}>
+                <option value="draft">Draft</option>
+                <option value="submitted">Submitted</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="published">Published</option>
+            </select>
+            {formData.status === "scheduled" && (
+                <input
+                    type="datetime-local"
+                    name="scheduledAt"
+                    value={formData.scheduledAt}
+                    onChange={handleChange}
+                />
+            )}
+            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+                {isSubmitting ? "Posting..." : post ? "Update Post" : "Create Post"}
+            </button>
+        </form>
+    );
 }
-
-export default Write
