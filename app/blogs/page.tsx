@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import BlogsFilters from './components/BlogsFilters';
 import BlogsContent from './components/BlogsContents';
 import BlogsPagination from './components/BlogsPagination';
+import { media } from '@/db/schema';
 
 export const metadata: Metadata = {
     title: 'All Blog Posts | Your Blog Name',
@@ -36,6 +37,8 @@ interface BlogPost {
     slug: string;
     excerpt: string;
     coverImageId: string | null;
+    coverImageUrl: string | null;
+    coverImageAltText: string | null;
     metaTitle: string | null;
     metaDescription: string | null;
     status: string;

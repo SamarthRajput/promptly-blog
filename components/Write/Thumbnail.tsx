@@ -92,7 +92,7 @@ const ThumbnailSection = ({
         img.src = url;
     };
 
-    const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const url = e.target.value.trim();
         if (!url) {
             setThumbnail(null);
@@ -104,6 +104,7 @@ const ThumbnailSection = ({
         try {
             new URL(url);
             validateImageUrl(url);
+            await uploadImage(url, 'Thumbnail from URL', 'url');
         } catch {
             setError('Please enter a valid URL');
             setThumbnail(null);
@@ -174,6 +175,11 @@ const ThumbnailSection = ({
         setSelectedImage(image);
         setIsModalOpen(false);
 
+        await uploadImage(image.urls.regular, image.alt_description || image.description || `Photo by ${image.user.name}`, 'unsplash');
+
+    };
+
+    const uploadImage = async (url: string, alt: string, provider: string) => {
         // Upload to media library immediately
         try {
             setIsLoading(true);
@@ -183,9 +189,9 @@ const ThumbnailSection = ({
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    imageUrl: image.urls.regular,
-                    altText: image.alt_description || image.user.name || '',
-                    provider: 'unsplash',
+                    imageUrl: url,
+                    altText: alt,
+                    provider: provider,
                 }),
             });
 
@@ -199,9 +205,8 @@ const ThumbnailSection = ({
             if (setThumbnailId) {
                 setThumbnailId(media.id);
             }
-
-            toast.success('Thumbnail selected!', {
-                description: `Photo by ${image.user.name} from Unsplash`
+            toast.success('Image saved to media library!', {
+                description: 'You can now use this image as your blog thumbnail.'
             });
         } catch (error: any) {
             setError('Failed to save image to media library');
@@ -239,13 +244,7 @@ const ThumbnailSection = ({
             }
 
             const data = await response.json();
-            setThumbnail(data.imageUrl);
-            setIsUploadModalOpen(false);
-            setSelectedUploadImage(null);
-
-            toast.success('Image uploaded successfully!', {
-                description: 'Your image has been uploaded and set as thumbnail.'
-            });
+            await uploadImage(data.imageUrl, selectedUploadImage.name, 'upload');
         } catch (error: any) {
             setError(error.message);
             toast.error('Upload failed', {

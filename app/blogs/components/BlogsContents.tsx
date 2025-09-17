@@ -9,6 +9,8 @@ interface BlogPost {
     slug: string;
     excerpt: string;
     coverImageId: string | null;
+    coverImageUrl: string | null;
+    coverImageAltText: string | null;
     metaTitle: string | null;
     metaDescription: string | null;
     status: string;
@@ -38,8 +40,8 @@ function PostCard({ post }: { post: BlogPost }) {
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex space-x-2">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isPublished ? 'bg-green-100 text-green-800' :
-                                isScheduled ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-gray-100 text-gray-800'
+                            isScheduled ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
                             }`}>
                             {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
                         </span>
@@ -82,6 +84,10 @@ function PostCard({ post }: { post: BlogPost }) {
                         {post.excerpt}
                     </p>
                 )}
+                {
+                    post.coverImageUrl &&
+                    <img src={post.coverImageUrl} alt={post.coverImageAltText || ""} content="image" className="w-full h-auto rounded-lg" />
+                }
 
                 {/* Metadata */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">

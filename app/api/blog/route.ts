@@ -2,7 +2,7 @@ import { media, posts, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { calculateReadingTime, calculateWordCount, checkAndMakeValidSlug, generateExcerpt } from "@/utils/helper-blog";
 import { currentUser } from "@clerk/nextjs/server";
-import { eq, and, isNull, desc, asc } from "drizzle-orm";
+import { eq, and, isNull, desc, asc, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 // Types for better type safety
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
 
         // Generate unique slug
         const finalSlug = checkAndMakeValidSlug(providedSlug) || await generateSlug(title);
-
+        
         // Calculate content metrics
         const wordCount = calculateWordCount(contentMd);
         const readingTime = calculateReadingTime(contentMd);
@@ -255,6 +255,8 @@ export async function GET(request: NextRequest) {
             slug: posts.slug,
             excerpt: posts.excerpt,
             coverImageId: posts.coverImageId,
+            coverImageUrl: media.url,
+            coverImageAltText: media.altText,
             metaTitle: posts.metaTitle,
             metaDescription: posts.metaDescription,
             status: posts.status,
@@ -267,17 +269,19 @@ export async function GET(request: NextRequest) {
             updatedAt: posts.updatedAt,
         })
             .from(posts)
+            .leftJoin(media, eq(posts.coverImageId, media.id))
             .where(and(...conditions))
             .orderBy(sortOrder(sortColumn as any))
             .limit(limit)
-            .offset(offset);
+            .offset(offset)
 
         // Get total count for pagination
-        const totalCountResult = await db.select({ count: posts.id })
+        const totalCountResult = await db
+            .select({ count: sql<number>`count(*)` })
             .from(posts)
             .where(and(...conditions));
 
-        const totalCount = totalCountResult.length;
+        const totalCount = totalCountResult[0]?.count || 0;
         const totalPages = Math.ceil(totalCount / limit);
 
         return NextResponse.json({

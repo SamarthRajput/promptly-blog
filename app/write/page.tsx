@@ -1,4 +1,5 @@
 "use client";
+import { EditorSection } from '@/components/Write/ContentMD';
 import ThumbnailSection from '@/components/Write/Thumbnail';
 import { useRouter } from 'next/navigation';
 import React, { useState } from "react";
@@ -10,11 +11,8 @@ export default function BlogEditor({ post }: { post?: any }) {
     const [formData, setFormData] = useState({
         title: post?.title || "",
         slug: post?.slug || "",
-        excerpt: post?.excerpt || "",
         contentMd: post?.contentMd || "",
         coverImageId: post?.coverImageId || "",
-        metaTitle: post?.metaTitle || "",
-        metaDescription: post?.metaDescription || "",
         status: post?.status || "draft",
         visibility: post?.visibility || "public",
         scheduledAt: post?.scheduledAt || "",
@@ -23,6 +21,10 @@ export default function BlogEditor({ post }: { post?: any }) {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleContentMdChange = (value: string) => {
+        setFormData({ ...formData, contentMd: value });
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -49,7 +51,7 @@ export default function BlogEditor({ post }: { post?: any }) {
             const data = await response.json();
             toast.success('Post created successfully!');
             router.push(`/blog/${data.post.slug}`);
-            setFormData({ title: "", slug: "", excerpt: "", contentMd: "", coverImageId: "", metaTitle: "", metaDescription: "", status: "draft", visibility: "public", scheduledAt: "" });
+            setFormData({ title: "", slug: "", contentMd: "", coverImageId: "", status: "draft", visibility: "public", scheduledAt: "" });
         } catch (error: any) {
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
             toast.error(errorMessage, {
@@ -57,7 +59,7 @@ export default function BlogEditor({ post }: { post?: any }) {
                 action: {
                     label: 'Retry',
                     onClick: () => {
-                        // No event to pass here, so just call handleSubmit with a dummy event if needed
+                        handleSubmit(e);
                     }
                 }
             });
@@ -97,17 +99,7 @@ export default function BlogEditor({ post }: { post?: any }) {
                         className="w-full border p-2 rounded"
                     />
                 </div>
-                <div>
-                    <label htmlFor="excerpt" className="block font-medium mb-1">Excerpt</label>
-                    <textarea
-                        id="excerpt"
-                        name="excerpt"
-                        value={formData.excerpt}
-                        onChange={handleChange}
-                        placeholder="Short summary (optional)"
-                        className="w-full border p-2 rounded h-20"
-                    />
-                </div>
+
                 <div>
                     <label className="block font-medium mb-1">Thumbnail</label>
                     <ThumbnailSection
@@ -126,8 +118,12 @@ export default function BlogEditor({ post }: { post?: any }) {
                         className="w-full border p-2 rounded h-64"
                         required
                     />
+                    <EditorSection
+                        contentMd={formData.contentMd}
+                        handleContentChange={handleContentMdChange}
+                    />
                 </div>
-              
+
                 <div>
                     <label htmlFor="status" className="block font-medium mb-1">Status</label>
                     <select

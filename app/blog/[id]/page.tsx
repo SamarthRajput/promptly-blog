@@ -123,7 +123,7 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
             type: 'article',
             publishedTime: post.publishedAt || undefined,
             modifiedTime: post.updatedAt,
-            images: post.ogImageUrl ? [{ url: post.ogImageUrl }] : undefined,
+            images: post.ogImageUrl ? [{ url: post.ogImageUrl }] : post.coverImage ? [{ url: post.coverImage.url }] : undefined,
         },
         twitter: {
             card: 'summary_large_image',
