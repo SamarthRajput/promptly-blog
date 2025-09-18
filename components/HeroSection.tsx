@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Search, PenTool, ArrowRight, Sparkles, BookOpen, Users, TrendingUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const HeroSection = () => {
     const [searchValue, setSearchValue] = useState('');
     const [currentWord, setCurrentWord] = useState(0);
+    const router = useRouter();
 
     const rotatingWords = ['Stories', 'Ideas', 'Thoughts', 'Insights', 'Dreams'];
 
@@ -66,13 +68,21 @@ const HeroSection = () => {
 
                         {/* CTA Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                            <button className="group bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center space-x-2">
+                            <button className="group bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center space-x-2"
+                                onClick={()=> {
+                                    router.push('/write');
+                                }}  
+                            >
                                 <PenTool className="w-5 h-5" />
                                 <span>Start Writing</span>
                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </button>
 
-                            <button className="bg-white/80 backdrop-blur-sm hover:bg-white text-sky-700 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 border border-sky-200 hover:border-sky-300 hover:shadow-lg">
+                            <button className="bg-white/80 backdrop-blur-sm hover:bg-white text-sky-700 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 border border-sky-200 hover:border-sky-300 hover:shadow-lg" 
+                                onClick={() => {
+                                    router.push('/blogs');
+                                }}
+                            >
                                 Explore Blogs
                             </button>
                         </div>

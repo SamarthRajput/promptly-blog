@@ -42,7 +42,7 @@ interface UnsplashImage {
 
 interface ThumbnailSectionProps {
     thumbnailId: string | null;
-    setThumbnailId?: (id: string) => void;
+    setThumbnailId?: (id: string | null) => void;
 }
 
 interface DBResponse {
@@ -122,7 +122,6 @@ const ThumbnailSection = ({
 
         try {
             const fetchedImages = await fetchUnsplashImages(query);
-            // Ensure each image has a 'thumb' property in 'urls'
             setImages(
                 fetchedImages.images.map((img: any) => ({
                     ...img,
@@ -176,11 +175,10 @@ const ThumbnailSection = ({
         setIsModalOpen(false);
 
         await uploadImage(image.urls.regular, image.alt_description || image.description || `Photo by ${image.user.name}`, 'unsplash');
-
     };
 
+
     const uploadImage = async (url: string, alt: string, provider: string) => {
-        // Upload to media library immediately
         try {
             setIsLoading(true);
             const response = await fetch('/api/media/upload', {
@@ -218,6 +216,14 @@ const ThumbnailSection = ({
         }
     };
 
+    const handleRemoveImage = () => {
+        setThumbnail(null);
+        setSelectedImage(null);
+        if (setThumbnailId) {
+            setThumbnailId(null);
+        }
+    };
+
     const handleUploadImageToCloudinary = async () => {
         if (!selectedUploadImage) {
             toast.error('No image selected', {
@@ -227,7 +233,7 @@ const ThumbnailSection = ({
         }
 
         const formData = new FormData();
-        formData.append('image', selectedUploadImage);
+        formData.append('file', selectedUploadImage);
 
         setIsUploading(true);
         setError(null);
@@ -244,7 +250,15 @@ const ThumbnailSection = ({
             }
 
             const data = await response.json();
-            await uploadImage(data.imageUrl, selectedUploadImage.name, 'upload');
+            const media: DBResponse = data.media;
+            setThumbnail(media.url);
+            if (setThumbnailId) {
+                setThumbnailId(media.id);
+            }
+            setIsUploadModalOpen(false);
+            toast.success('Image uploaded and saved!', {
+                description: 'You can now use this image as your blog thumbnail.'
+            });
         } catch (error: any) {
             setError(error.message);
             toast.error('Upload failed', {
@@ -440,7 +454,7 @@ const ThumbnailSection = ({
                         </div>
                     )}
 
-                    {/* Preview */}
+                    {/* Preview and Remove Button */}
                     {thumbnail && !error && !previewLoading && (
                         <div className="space-y-3">
                             <Label className="text-sm font-medium text-gray-700">Preview</Label>
@@ -451,11 +465,20 @@ const ThumbnailSection = ({
                                     className="w-full h-full object-cover"
                                     loading="lazy"
                                 />
-                                <div className="absolute top-2 right-2">
+                                <div className="absolute top-2 right-2 flex space-x-2">
                                     <div className="bg-green-500 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center space-x-1">
                                         <Check className="w-3 h-3" />
                                         <span>Selected</span>
                                     </div>
+                                    <button
+                                        onClick={handleRemoveImage}
+                                        className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center space-x-1"
+                                        aria-label="Remove selected image"
+                                        type="button"
+                                    >
+                                        <X className="w-3 h-3" />
+                                        <span>Remove</span>
+                                    </button>
                                 </div>
                             </div>
                             {selectedImage && (
