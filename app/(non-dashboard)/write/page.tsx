@@ -1,5 +1,5 @@
 import React from 'react'
-import BlogEditor from '../../components/Write/BlogEditor'
+import BlogEditor from '../../../components/Write/BlogEditor'
 
 const WriteBlog = () => {
     return (

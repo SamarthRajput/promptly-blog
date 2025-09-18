@@ -9,5 +9,4 @@ export const generateGeminiResponse = async (prompt: string) => {
 
     const result = await model.generateContent(prompt);
     return result.response.text();
-    // return { intent: "other", reply: "I'm sorry, but I cannot assist with that." };
 };

@@ -377,7 +377,7 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                                 <ThumbnailSection
                                     thumbnailId={formData.coverImageId}
-                                    setThumbnailId={(id) => setFormData(prev => ({ ...prev, coverImageId: id }))}
+                                    setThumbnailId={(id) => setFormData(prev => ({ ...prev, coverImageId: id ?? "" }))}
                                 />
                             </div>
                         </FormField>

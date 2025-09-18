@@ -4,6 +4,7 @@ import { media, user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import cloudinary from "@/lib/cloudinary";
 import { Readable } from "stream";
+import type { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 import { syncUser } from "@/actions/syncUser";
 
 export async function POST(request: Request) {
@@ -30,7 +31,10 @@ export async function POST(request: Request) {
       new Promise<{ url: string }>((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "promptly-blog" },
-          (error, result) => {
+          (
+            error: UploadApiErrorResponse | undefined,
+            result: UploadApiResponse | undefined
+          ) => {
             if (error || !result) return reject(error);
             resolve({ url: result.secure_url });
           }

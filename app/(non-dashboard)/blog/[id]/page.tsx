@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import BlogContent from '@/components/BlogContent';
 import { BlogType, CategoryType } from '@/types/blog';
 import { serializeDocument } from '@/utils/date-formatter';
-import { showError } from '@/app/edit/[id]/page';
+import { showError } from '@/app/(non-dashboard)/edit/[id]/page';
 import { getUserIdFromClerk, fetchPostWithCategories, fetchAllCategories } from '@/utils/blog-helper';
 
 /// Define the expected type for the props
