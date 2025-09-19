@@ -110,7 +110,6 @@ const StatusBadge = ({ status }: { status: string }) => {
         scheduled: { icon: Clock, color: 'bg-orange-100 text-orange-700 border-orange-200', text: 'Scheduled' },
         published: { icon: CheckCircle, color: 'bg-green-100 text-green-700 border-green-200', text: 'Published' }
     };
-
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
     const IconComponent = config.icon;
 
@@ -132,7 +131,6 @@ interface BlogEditorProps {
 export default function BlogEditor({ post, categories = [], mode = 'create', selectedCategoriesIds }: BlogEditorProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
-    const [isGeneratingMeta, setIsGeneratingMeta] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [formData, setFormData] = useState({
         title: post?.title || "",
@@ -143,9 +141,6 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
         visibility: post?.visibility || "public",
         scheduledAt: post?.scheduledAt || "",
         categoryId: selectedCategoriesIds ? selectedCategoriesIds.map(c => c.id) : [],
-        metaTitle: post?.metaTitle || "",
-        metaDescription: post?.metaDescription || "",
-        excerpt: post?.excerpt || "",
     });
     const router = useRouter();
 
@@ -206,36 +201,6 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
         }
     };
 
-    const generateAIMeta = async () => {
-        if (!formData.contentMd.trim()) {
-            toast.error('Please add some content first to generate meta data');
-            return;
-        }
-        setIsGeneratingMeta(true);
-        try {
-            const response = await fetch('/api/generate-meta', {  // Sample API route for AI generation
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: formData.contentMd })
-            });
-            if (!response.ok) {
-                throw new Error('Failed to generate metadata');
-            }
-            const data = await response.json();
-            setFormData(prev => ({
-                ...prev,
-                metaTitle: data.metaTitle || prev.metaTitle,
-                metaDescription: data.metaDescription || prev.metaDescription,
-                excerpt: data.excerpt || prev.excerpt,
-            }));
-            toast.success('Metadata generated successfully!');
-        } catch (error) {
-            toast.error('Could not generate metadata. Please try again.');
-        } finally {
-            setIsGeneratingMeta(false);
-        }
-    };
-
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
         if (!formData.title.trim()) newErrors.title = "Title is required";
@@ -283,9 +248,6 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                     visibility: "public",
                     scheduledAt: "",
                     categoryId: selectedCategoriesIds ? selectedCategoriesIds.map(c => c.id) : [],
-                    metaTitle: "",
-                    metaDescription: "",
-                    excerpt: "",
                 });
             }
         } catch (error: any) {
@@ -430,43 +392,6 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                                     </div>
                                 </div>
                             </div>
-                        </FormField>
-
-                        {/* AI Generated Meta Fields */}
-                        <FormField label="Meta Title" icon={FileText} description="SEO meta title for your post">
-                            <div className="flex space-x-3">
-                                <input
-                                    type="text"
-                                    name="metaTitle"
-                                    value={formData.metaTitle}
-                                    onChange={handleChange}
-                                    placeholder="Enter meta title or generate with AI"
-                                    className="flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                                <AIButton onClick={generateAIMeta} loading={isGeneratingMeta}>Generate</AIButton>
-                            </div>
-                        </FormField>
-
-                        <FormField label="Meta Description" icon={FileText} description="SEO meta description for your post">
-                            <textarea
-                                name="metaDescription"
-                                value={formData.metaDescription}
-                                onChange={handleChange}
-                                placeholder="Enter meta description or generate with AI"
-                                rows={3}
-                                className="w-full px-4 py-3 border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                        </FormField>
-
-                        <FormField label="Excerpt" icon={FileText} description="Short excerpt shown in post previews">
-                            <textarea
-                                name="excerpt"
-                                value={formData.excerpt}
-                                onChange={handleChange}
-                                placeholder="Enter excerpt or generate with AI"
-                                rows={3}
-                                className="w-full px-4 py-3 border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
                         </FormField>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
