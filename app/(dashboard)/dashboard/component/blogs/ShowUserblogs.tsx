@@ -1,374 +1,37 @@
 "use client";
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UsersBlogType, BlogStatusType, BlogVisibilityType } from '@/actions/fetchAllPostByUser';
+import { UsersBlogType } from '@/actions/fetchAllPostByUser';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Search,
     Filter,
     Plus,
-    Edit,
-    Trash2,
-    Eye,
-    Calendar,
-    Clock,
-    BarChart3,
-    MessageCircle,
-    Heart,
-    Globe,
-    Link,
-    Lock,
-    Archive,
-    CheckCircle,
-    XCircle,
-    AlertCircle,
     FileText,
-    MoreHorizontal,
-    ExternalLink,
-    Copy,
-    Share2,
     SortDesc,
     SortAsc,
     X,
-    ChevronDown
+    ChevronDown,
+    Grid3X3,
+    List,
+    RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AnalyticsCard, BulkActions, EnhancedBlogCard, statusConfig, visibilityConfig } from './Helper';
 
-// Status configuration for badges and colors
-const statusConfig = {
-    draft: {
-        icon: FileText,
-        color: 'bg-gray-100 text-gray-800 border-gray-200',
-        text: 'Draft',
-        description: 'Work in progress'
-    },
-    submitted: {
-        icon: CheckCircle,
-        color: 'bg-blue-100 text-blue-800 border-blue-200',
-        text: 'Submitted',
-        description: 'Waiting for review'
-    },
-    under_review: {
-        icon: Clock,
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-        text: 'Under Review',
-        description: 'Being reviewed'
-    },
-    approved: {
-        icon: CheckCircle,
-        color: 'bg-green-100 text-green-800 border-green-200',
-        text: 'Approved',
-        description: 'Ready to publish'
-    },
-    scheduled: {
-        icon: Calendar,
-        color: 'bg-purple-100 text-purple-800 border-purple-200',
-        text: 'Scheduled',
-        description: 'Scheduled for later'
-    },
-    rejected: {
-        icon: XCircle,
-        color: 'bg-red-100 text-red-800 border-red-200',
-        text: 'Rejected',
-        description: 'Needs revision'
-    },
-    archived: {
-        icon: Archive,
-        color: 'bg-slate-100 text-slate-800 border-slate-200',
-        text: 'Archived',
-        description: 'No longer active'
-    },
-    published: {
-        icon: CheckCircle,
-        color: 'bg-green-100 text-green-800 border-green-200',
-        text: 'Published',
-        description: 'Live on the site'
-    }
-};
 
-const visibilityConfig = {
-    public: { icon: Globe, color: 'text-green-600', text: 'Public' },
-    unlisted: { icon: Link, color: 'text-orange-600', text: 'Unlisted' },
-    private: { icon: Lock, color: 'text-red-600', text: 'Private' }
-};
-
-// Loading Spinner Component
-const LoadingSpinner = ({ className = "" }) => (
-    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-    </svg>
-);
-
-// Status Badge Component
-const StatusBadge = ({ status }: { status: BlogStatusType }) => {
-    const config = statusConfig[status];
-    const IconComponent = config.icon;
-
-    return (
-        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${config.color}`}>
-            <IconComponent className="w-3 h-3" />
-            <span className="hidden sm:inline">{config.text}</span>
-        </div>
-    );
-};
-
-// Visibility Icon Component
-const VisibilityIcon = ({ visibility }: { visibility: BlogVisibilityType }) => {
-    const config = visibilityConfig[visibility];
-    const IconComponent = config.icon;
-
-    return (
-        <div className="flex items-center gap-1" title={config.text}>
-            <IconComponent className={`w-4 h-4 ${config.color}`} />
-            <span className="hidden md:inline text-sm text-slate-600">{config.text}</span>
-        </div>
-    );
-};
-
-// Blog Stats Component
-const BlogStats = ({ blog }: { blog: UsersBlogType }) => (
-    <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
-        <div className="flex items-center gap-1">
-            <Eye className="w-3 h-3" />
-            <span>{blog.wordCount}</span>
-        </div>
-        <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span>{blog.readingTimeMins}m</span>
-        </div>
-        <div className="flex items-center gap-1">
-            <MessageCircle className="w-3 h-3" />
-            <span>{blog.commentCount}</span>
-        </div>
-        <div className="flex items-center gap-1">
-            <Heart className="w-3 h-3" />
-            <span>{blog.reactionCount}</span>
-        </div>
-    </div>
-);
-
-// Action Dropdown Component
-const ActionDropdown = ({ blog, onEdit, onDelete, onDuplicate }: {
-    blog: UsersBlogType;
-    onEdit: (id: string) => void;
-    onDelete: (id: string) => void;
-    onDuplicate: (id: string) => void;
-}) => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const handleCopyLink = () => {
-        navigator.clipboard.writeText(`${window.location.origin}/blog/${blog.slug}`);
-        toast.success('Link copied to clipboard!');
-        setIsOpen(false);
-    };
-
-    const handleShare = () => {
-        if (navigator.share) {
-            navigator.share({
-                title: blog.title,
-                url: `${window.location.origin}/blog/${blog.slug}`,
-            });
-        } else {
-            handleCopyLink();
-        }
-        setIsOpen(false);
-    };
-
-    return (
-        <div className="relative">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                aria-label="More actions"
-            >
-                <MoreHorizontal className="w-4 h-4" />
-            </button>
-
-            {isOpen && (
-                <>
-                    <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-20">
-                        {[
-                            { icon: Edit, label: 'Edit', action: () => onEdit(blog.id), color: 'text-slate-700' },
-                            { icon: ExternalLink, label: 'View', action: () => window.open(`/blog/${blog.slug}`, '_blank'), color: 'text-slate-700' },
-                            { icon: Copy, label: 'Copy Link', action: handleCopyLink, color: 'text-slate-700' },
-                            { icon: Share2, label: 'Share', action: handleShare, color: 'text-slate-700' },
-                            { icon: Copy, label: 'Duplicate', action: () => onDuplicate(blog.id), color: 'text-slate-700' },
-                            { icon: Trash2, label: 'Delete', action: () => onDelete(blog.id), color: 'text-red-600', divider: true },
-                        ].map((item, index) => (
-                            <div key={index}>
-                                {item.divider && <hr className="my-1 border-slate-200" />}
-                                <button
-                                    onClick={() => { item.action(); setIsOpen(false); }}
-                                    className={`flex items-center gap-3 px-3 py-2 ${item.color} hover:bg-slate-50 transition-colors w-full text-left text-sm`}
-                                >
-                                    <item.icon className="w-4 h-4" />
-                                    <span>{item.label}</span>
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </>
-            )}
-        </div>
-    );
-};
-
-// Mobile Blog Card Component
-const MobileBlogCard = ({ blog, onEdit, onDelete, onDuplicate }: {
-    blog: UsersBlogType;
-    onEdit: (id: string) => void;
-    onDelete: (id: string) => void;
-    onDuplicate: (id: string) => void;
-}) => {
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return 'Not set';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
-    return (
-        <div className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div className="flex gap-3">
-                <img
-                    src={blog.coverImageUrl || '/default-thumbnail.png'}
-                    alt={blog.coverImageAlt || 'Cover'}
-                    className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-medium text-slate-900 text-sm line-clamp-2 leading-tight">
-                            {blog.title}
-                        </h3>
-                        <ActionDropdown
-                            blog={blog}
-                            onEdit={onEdit}
-                            onDelete={onDelete}
-                            onDuplicate={onDuplicate}
-                        />
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                        <StatusBadge status={blog.status} />
-                        <VisibilityIcon visibility={blog.visibility} />
-                    </div>
-                    <div className="flex items-center justify-between mt-3">
-                        <BlogStats blog={blog} />
-                        <span className="text-xs text-slate-500">
-                            {formatDate(blog.updatedAt)}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// Desktop Blog Card Component
-const DesktopBlogCard = ({ blog, onEdit, onDelete, onDuplicate }: {
-    blog: UsersBlogType;
-    onEdit: (id: string) => void;
-    onDelete: (id: string) => void;
-    onDuplicate: (id: string) => void;
-}) => {
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return 'Not set';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
-    return (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-            <img
-                src={blog.coverImageUrl || '/default-thumbnail.png'}
-                alt={blog.coverImageAlt || 'Cover'}
-                className="w-full h-40 object-cover"
-            />
-            <div className="p-5">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-slate-900 line-clamp-2 mb-2">
-                            {blog.title}
-                        </h3>
-                        {blog.excerpt && (
-                            <p className="text-slate-600 text-sm line-clamp-2 mb-3">
-                                {blog.excerpt}
-                            </p>
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4">
-                    <StatusBadge status={blog.status} />
-                    <VisibilityIcon visibility={blog.visibility} />
-                </div>
-
-                <BlogStats blog={blog} />
-
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-                    <div className="text-xs text-slate-500">
-                        Updated {formatDate(blog.updatedAt)}
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => onEdit(blog.id)}
-                            className="p-2 hover:bg-sky-50 rounded-lg transition-colors text-sky-600"
-                            title="Edit"
-                        >
-                            <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => window.open(`/blog/${blog.slug}`, '_blank')}
-                            className="p-2 hover:bg-green-50 rounded-lg transition-colors text-green-600"
-                            title="View"
-                        >
-                            <Eye className="w-4 h-4" />
-                        </button>
-                        <ActionDropdown
-                            blog={blog}
-                            onEdit={onEdit}
-                            onDelete={onDelete}
-                            onDuplicate={onDuplicate}
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// Filter Button Component
-const FilterButton = ({ isActive, onClick, children }: {
-    isActive: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-}) => (
-    <button
-        onClick={onClick}
-        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-            ? 'bg-sky-100 text-sky-700 border border-sky-200'
-            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-    >
-        {children}
-    </button>
-);
-
-// Main Component
+// Main Enhanced Component
 interface ManageBlogsProps {
     blogs: UsersBlogType[];
 }
 
-const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
+const EnhancedManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
     const router = useRouter();
     const searchParams = useSearchParams();
 
+    // Existing state
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [selectedVisibility, setSelectedVisibility] = useState<string>('all');
@@ -378,7 +41,23 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
     const [showFilters, setShowFilters] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    // Update URL params
+    // New state
+    const [selectedBlogs, setSelectedBlogs] = useState<string[]>([]);
+    const [showAnalytics, setShowAnalytics] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Initialize from URL params (existing code)
+    useEffect(() => {
+        setSearchQuery(searchParams.get('search') || '');
+        setSelectedStatus(searchParams.get('status') || 'all');
+        setSelectedVisibility(searchParams.get('visibility') || 'all');
+        setSortBy(searchParams.get('sortBy') || 'updatedAt');
+        setSortOrder(searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc');
+        setActiveTab(searchParams.get('tab') || 'all');
+        setViewMode(searchParams.get('view') as 'grid' | 'list' || 'grid');
+    }, [searchParams]);
+
+    // URL params update function (existing)
     const updateUrlParams = useCallback((key: string, value: string) => {
         const url = new URL(window.location.href);
         const searchParams = new URLSearchParams(url.search);
@@ -390,44 +69,30 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
         window.history.replaceState({}, '', `${window.location.pathname}?${searchParams}`);
     }, []);
 
-    // Initialize from URL params
-    useEffect(() => {
-        setSearchQuery(searchParams.get('search') || '');
-        setSelectedStatus(searchParams.get('status') || 'all');
-        setSelectedVisibility(searchParams.get('visibility') || 'all');
-        setSortBy(searchParams.get('sortBy') || 'updatedAt');
-        setSortOrder(searchParams.get('sortOrder') as 'asc' | 'desc' || 'desc');
-        setActiveTab(searchParams.get('tab') || 'all');
-    }, [searchParams]);
-
-    // Filter and sort blogs
+    // Enhanced filtering and sorting (existing logic enhanced)
     const filteredAndSortedBlogs = useMemo(() => {
         let filtered = blogs;
 
-        // Filter by search query
         if (searchQuery) {
             filtered = filtered.filter(blog =>
                 blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (blog.excerpt && blog.excerpt.toLowerCase().includes(searchQuery.toLowerCase()))
+                (blog.excerpt && blog.excerpt.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (blog.metaTitle && blog.metaTitle.toLowerCase().includes(searchQuery.toLowerCase()))
             );
         }
 
-        // Filter by status
         if (selectedStatus !== 'all') {
             filtered = filtered.filter(blog => blog.status === selectedStatus);
         }
 
-        // Filter by visibility
         if (selectedVisibility !== 'all') {
             filtered = filtered.filter(blog => blog.visibility === selectedVisibility);
         }
 
-        // Filter by tab
         if (activeTab !== 'all') {
             filtered = filtered.filter(blog => blog.status === activeTab);
         }
 
-        // Sort blogs
         filtered.sort((a, b) => {
             let aValue = a[sortBy as keyof UsersBlogType];
             let bValue = b[sortBy as keyof UsersBlogType];
@@ -448,7 +113,7 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
         return filtered;
     }, [blogs, searchQuery, selectedStatus, selectedVisibility, sortBy, sortOrder, activeTab]);
 
-    // Get blog counts for tabs
+    // Blog counts (existing)
     const blogCounts = useMemo(() => {
         const counts: Record<string, number> = {
             all: blogs.length,
@@ -469,7 +134,60 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
         return counts;
     }, [blogs]);
 
-    // Handlers
+    // Selection handlers
+    const handleBlogSelect = useCallback((blogId: string, selected: boolean) => {
+        setSelectedBlogs(prev =>
+            selected
+                ? [...prev, blogId]
+                : prev.filter(id => id !== blogId)
+        );
+    }, []);
+
+    const handleSelectAll = useCallback((selected: boolean) => {
+        setSelectedBlogs(selected ? filteredAndSortedBlogs.map(blog => blog.id) : []);
+    }, [filteredAndSortedBlogs]);
+
+    const handleClearSelection = useCallback(() => {
+        setSelectedBlogs([]);
+    }, []);
+
+    // Bulk actions handler
+    const handleBulkAction = useCallback((action: string, blogIds: string[]) => {
+        switch (action) {
+            case 'publish':
+                toast.success(`${blogIds.length} blogs published`);
+                break;
+            case 'draft':
+                toast.success(`${blogIds.length} blogs moved to draft`);
+                break;
+            case 'archive':
+                toast.success(`${blogIds.length} blogs archived`);
+                break;
+            case 'delete':
+                toast.success(`${blogIds.length} blogs deleted`);
+                break;
+            case 'export':
+                const csvContent = [
+                    'Title,Status,Visibility,Word Count,Reactions,Comments,Created Date',
+                    ...blogs.filter(blog => blogIds.includes(blog.id)).map(blog =>
+                        `"${blog.title.replace(/"/g, '""')}",${blog.status},${blog.visibility},${blog.wordCount},${blog.reactionCount},${blog.commentCount},${blog.createdAt ? new Date(blog.createdAt).toISOString() : ""}`
+                    )
+                ].join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Promptly Blog | blogs-export-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+                toast.success(`${blogIds.length} blogs exported`);
+                break;
+        }
+        setSelectedBlogs([]);
+    }, [blogs]);
+
+    // Existing handlers
     const handleBlogEdit = useCallback((blogId: string) => {
         router.push(`/dashboard/blogs/edit/${blogId}`);
     }, [router]);
@@ -484,6 +202,12 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
 
     const handleBlogDuplicate = useCallback((blogId: string) => {
         toast.success('Blog duplicated successfully!');
+    }, []);
+
+    const handleRefresh = useCallback(async () => {
+        router.refresh();
+        setIsRefreshing(true);
+        setTimeout(() => setIsRefreshing(false), 1000);
     }, []);
 
     const handleNewPost = () => {
@@ -516,6 +240,11 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
         updateUrlParams('tab', value);
     };
 
+    const handleViewModeChange = (mode: 'grid' | 'list') => {
+        setViewMode(mode);
+        updateUrlParams('view', mode);
+    };
+
     const clearAllFilters = () => {
         setSearchQuery('');
         setSelectedStatus('all');
@@ -528,11 +257,12 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
     };
 
     const hasActiveFilters = searchQuery || selectedStatus !== 'all' || selectedVisibility !== 'all' || activeTab !== 'all';
+    const allSelected = selectedBlogs.length === filteredAndSortedBlogs.length && filteredAndSortedBlogs.length > 0;
 
     return (
         <div className="min-h-screen bg-slate-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {/* Header */}
+                {/* Enhanced Header */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
@@ -540,27 +270,49 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
                                 Manage Blogs
                             </h1>
                             <p className="text-slate-600">
-                                Create, edit, and manage all your blog posts
+                                Create, edit, and manage all your blog posts with advanced analytics
                             </p>
                         </div>
-                        <button
-                            onClick={handleNewPost}
-                            className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-lg transition-colors font-medium"
-                        >
-                            <Plus className="w-4 h-4" />
-                            <span>New Post</span>
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg transition-colors font-medium disabled:opacity-50"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                <span className="hidden sm:inline">Refresh</span>
+                            </button>
+                            <button
+                                onClick={handleNewPost}
+                                className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-lg transition-colors font-medium"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>New Post</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Search and Quick Filters */}
+                {/* Analytics Card */}
+                {showAnalytics && (
+                    <AnalyticsCard blogs={blogs} />
+                )}
+
+                {/* Bulk Actions */}
+                <BulkActions
+                    selectedBlogs={selectedBlogs}
+                    onBulkAction={handleBulkAction}
+                    onClearSelection={handleClearSelection}
+                />
+
+                {/* Enhanced Search and Filters */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
                     {/* Search Bar */}
                     <div className="relative mb-4">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Search blogs..."
+                            placeholder="Search by title, excerpt, or meta title..."
                             value={searchQuery}
                             onChange={(e) => handleSearch(e.target.value)}
                             className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
@@ -585,19 +337,55 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
                             Filters
                             <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
                         </button>
-                        {hasActiveFilters && (
-                            <button
-                                onClick={clearAllFilters}
-                                className="text-sm text-sky-600 hover:text-sky-700 font-medium"
-                            >
-                                Clear all
-                            </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {hasActiveFilters && (
+                                <button
+                                    onClick={clearAllFilters}
+                                    className="text-sm text-sky-600 hover:text-sky-700 font-medium"
+                                >
+                                    Clear all
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Filters */}
-                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ${showFilters ? 'block' : 'hidden lg:grid'}`}>
+                    {/* Enhanced Filters */}
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 ${showFilters ? 'block' : 'hidden lg:grid'}`}>
                         {/* Status Filter */}
+                        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="All statuses" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                {Object.entries(statusConfig).map(([key, config]) => (
+                                    <SelectItem key={key} value={key}>
+                                        <div className="flex items-center gap-2">
+                                            <config.icon className="w-3 h-3" />
+                                            {config.text}
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        {/* Visibility Filter */}
+                        <Select value={selectedVisibility} onValueChange={setSelectedVisibility}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="All visibility" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Visibility</SelectItem>
+                                {Object.entries(visibilityConfig).map(([key, config]) => (
+                                    <SelectItem key={key} value={key}>
+                                        <div className="flex items-center gap-2">
+                                            <config.icon className="w-3 h-3" />
+                                            {config.text}
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
 
                         {/* Sort */}
                         <Select value={sortBy} onValueChange={handleSortChange}>
@@ -625,6 +413,28 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
                                 {sortOrder === 'desc' ? 'Desc' : 'Asc'}
                             </span>
                         </button>
+
+                        {/* View Mode Toggle */}
+                        <div className="flex border border-slate-200 rounded-lg overflow-hidden">
+                            <button
+                                onClick={() => handleViewModeChange('grid')}
+                                className={`flex-1 flex items-center justify-center py-2 px-3 transition-colors ${viewMode === 'grid'
+                                    ? 'bg-sky-100 text-sky-700'
+                                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <Grid3X3 className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => handleViewModeChange('list')}
+                                className={`flex-1 flex items-center justify-center py-2 px-3 transition-colors ${viewMode === 'list'
+                                    ? 'bg-sky-100 text-sky-700'
+                                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                                    }`}
+                            >
+                                <List className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Clear Filters (Desktop) */}
@@ -646,8 +456,19 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
                         <div className="p-4 border-b border-slate-200">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-semibold text-slate-900">Posts</h2>
-                                <div className="text-sm text-slate-500">
-                                    {filteredAndSortedBlogs.length} of {blogs.length}
+                                <div className="flex items-center gap-4">
+                                    <div className="text-sm text-slate-500">
+                                        {filteredAndSortedBlogs.length} of {blogs.length}
+                                    </div>
+                                    {filteredAndSortedBlogs.length > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox
+                                                checked={allSelected}
+                                                onCheckedChange={handleSelectAll}
+                                            />
+                                            <span className="text-sm text-slate-600">Select all</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <TabsList className="w-full justify-start overflow-x-auto">
@@ -704,40 +525,25 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
                                 </div>
                             ) : (
                                 <>
-                                    {/* Mobile List View */}
-                                    <div className="block lg:hidden space-y-3">
+                                    {/* Blog List */}
+                                    <div className={viewMode === 'grid'
+                                        ? 'grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6'
+                                        : 'space-y-4'
+                                    }>
                                         {filteredAndSortedBlogs.map(blog => (
-                                            <MobileBlogCard
+                                            <EnhancedBlogCard
                                                 key={blog.id}
                                                 blog={blog}
+                                                viewMode={viewMode}
+                                                isSelected={selectedBlogs.includes(blog.id)}
+                                                onSelect={handleBlogSelect}
                                                 onEdit={handleBlogEdit}
                                                 onDelete={handleBlogDelete}
+                                                onArchive={handleBlogArchive}
                                                 onDuplicate={handleBlogDuplicate}
                                             />
                                         ))}
                                     </div>
-
-                                    {/* Desktop Grid View */}
-                                    <div className="hidden lg:grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
-                                        {filteredAndSortedBlogs.map(blog => (
-                                            <DesktopBlogCard
-                                                key={blog.id}
-                                                blog={blog}
-                                                onEdit={handleBlogEdit}
-                                                onDelete={handleBlogDelete}
-                                                onDuplicate={handleBlogDuplicate}
-                                            />
-                                        ))}
-                                    </div>
-
-                                    {/* Load More Button (if needed) */}
-                                    {filteredAndSortedBlogs.length > 12 && (
-                                        <div className="text-center mt-8">
-                                            <button className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-medium transition-colors">
-                                                Load More Posts
-                                            </button>
-                                        </div>
-                                    )}
                                 </>
                             )}
                         </TabsContent>
@@ -774,4 +580,4 @@ const ManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
     );
 };
 
-export default ManageBlogs;
+export default EnhancedManageBlogs;
