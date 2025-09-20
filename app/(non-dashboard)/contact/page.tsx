@@ -283,7 +283,7 @@ const ContactPage = () => {
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {contactOptions.map((option, index) => (
-                            <div key={index} className={`relative bg-white border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${option.primary ? 'border-sky-200 bg-sky-50' : 'border-slate-200'}`}>
+                            <div key={index} className={`relative bg-white border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${option.primary ? 'border-sky-200 bg-sky-50' : 'border-slate-200'} cursor-pointer`}>
                                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${option.color} flex items-center justify-center mb-4 shadow-lg`}>
                                     <option.icon className="w-6 h-6 text-white" />
                                 </div>
@@ -371,7 +371,7 @@ const ContactPage = () => {
                                             name="category"
                                             value={formData.category}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all cursor-pointer"
                                         >
                                             <option value="">Select a category</option>
                                             {inquiryTypes.map((type) => (
@@ -445,7 +445,7 @@ const ContactPage = () => {
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isSubmitting}
-                                        className="w-full bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white px-6 py-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2"
+                                        className="w-full bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 text-white px-6 py-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                                     >
                                         {isSubmitting ? (
                                             <>
@@ -482,7 +482,7 @@ const ContactPage = () => {
                             <div key={index} className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden">
                                 <button
                                     onClick={() => toggleFaq(index)}
-                                    className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-slate-100 transition-colors"
+                                    className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-slate-100 transition-colors cursor-pointer"
                                 >
                                     <span className="font-medium text-slate-900">{faq.question}</span>
                                     {expandedFaq === index ? (
@@ -523,7 +523,7 @@ const ContactPage = () => {
                                         href={social.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                                     >
                                         <social.icon className="w-5 h-5 text-slate-600 mt-0.5" />
                                         <div>
@@ -538,21 +538,21 @@ const ContactPage = () => {
                         <div className="bg-white rounded-xl p-6 border border-slate-200">
                             <h3 className="text-lg font-semibold text-slate-900 mb-4">Self-Help Resources</h3>
                             <div className="space-y-3">
-                                <a href="/help" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                                <a href="/help" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
                                     <BookOpen className="w-5 h-5 text-slate-600" />
                                     <div>
                                         <div className="font-medium text-slate-900 text-sm">Documentation</div>
                                         <div className="text-xs text-slate-500">Complete guides & tutorials</div>
                                     </div>
                                 </a>
-                                <a href="/contact" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                                <a href="/contact" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
                                     <Users className="w-5 h-5 text-slate-600" />
                                     <div>
                                         <div className="font-medium text-slate-900 text-sm">Community Forum</div>
                                         <div className="text-xs text-slate-500">Connect with other users</div>
                                     </div>
                                 </a>
-                                <a href="/status" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                                <a href="/status" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
                                     <Zap className="w-5 h-5 text-slate-600" />
                                     <div>
                                         <div className="font-medium text-slate-900 text-sm">System Status</div>
