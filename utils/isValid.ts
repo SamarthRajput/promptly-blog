@@ -6,3 +6,8 @@ export const isValidUUID = (id: string): boolean =>
 
 export const isValidSlug = (slug: string): boolean =>
     /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+
+export function parseIntOrDefault(value: string | null, defaultValue: number, min = 1) {
+    const parsed = parseInt(value ?? "", 10);
+    return isNaN(parsed) || parsed < min ? defaultValue : parsed;
+}

@@ -22,7 +22,7 @@ import {
     Wand2,
 } from 'lucide-react';
 import { BlogType, CategoryType } from '@/types/blog';
-import { makeValidSlug } from '@/utils/helper-blog';
+import { checkAndMakeValidSlug } from '@/utils/helper-blog';
 
 // Loading Spinner Component
 const LoadingSpinner = ({ className = "" }) => (
@@ -147,7 +147,7 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
     useEffect(() => {
         if (formData?.slug) {
             const handler = setTimeout(() => {
-                const validSlug = makeValidSlug(formData.slug);
+                const validSlug = checkAndMakeValidSlug(formData.slug);
                 setFormData(prev => ({ ...prev, slug: validSlug }));
             }, 1000);
             return () => clearTimeout(handler);

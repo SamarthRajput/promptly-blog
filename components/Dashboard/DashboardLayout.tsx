@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -18,9 +18,16 @@ import {
     ChevronDown,
     LogOut,
     UserCircle,
-    PenTool
+    PenTool,
+    CheckSquare,
+    Users,
+    MessageSquareWarning,
+    FileText,
+    Tags
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useUser } from '@clerk/nextjs';
 
 // Navigation items configuration
 const navItems = [
@@ -75,11 +82,76 @@ const navItems = [
     }
 ];
 
+const adminNavItems = [
+    {
+        title: 'Admin Overview',
+        description: 'Quick summary of site activity, pending reviews, and system stats.',
+        href: '/admin',
+        icon: LayoutDashboard,
+        exact: true
+    },
+    {
+        title: 'Post Review & Approvals',
+        description: 'Review, approve, reject, or schedule submitted blog posts.',
+        href: '/admin/reviews',
+        icon: CheckSquare
+    },
+    {
+        title: 'Users Management',
+        description: 'Manage users, roles, and site permissions.',
+        href: '/admin/users',
+        icon: Users
+    },
+    {
+        title: 'Categories & Tags',
+        description: 'Create and manage content categories and tags.',
+        href: '/admin/taxonomy',
+        icon: Tags
+    },
+    {
+        title: 'Media Library',
+        description: 'Access and moderate uploaded media files.',
+        href: '/admin/media',
+        icon: ImageIcon
+    },
+    {
+        title: 'Comments & Reports',
+        description: 'Moderate comments and handle flagged content.',
+        href: '/admin/comments',
+        icon: MessageSquareWarning
+    },
+    {
+        title: 'Site Notifications',
+        description: 'Send or broadcast announcements to all users.',
+        href: '/admin/notifications',
+        icon: Bell
+    },
+    {
+        title: 'Audit Logs',
+        description: 'Track all critical actions and changes across the platform.',
+        href: '/admin/audit-logs',
+        icon: FileText
+    },
+    {
+        title: 'System Settings',
+        description: 'Configure platform-level preferences and integrations.',
+        href: '/admin/settings',
+        icon: Settings
+    }
+];
+
+
 interface DashboardLayoutProps {
     children: React.ReactNode;
 }
 
 interface SidebarProps {
+    loggedInUser: {
+        name: string;
+        email: string;
+        imageUrl: string;
+    };
+    isAdminRoute: boolean;
     isCollapsed: boolean;
     onToggle: () => void;
     isMobile: boolean;
@@ -94,11 +166,11 @@ interface TopNavbarProps {
 }
 
 // Sidebar Component
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobile, isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ loggedInUser, isAdminRoute, isCollapsed, onToggle, isMobile, isOpen, onClose }) => {
     const pathname = usePathname();
     const router = useRouter();
 
-    const isActive = (item: typeof navItems[0]) => {
+    const isActive = (item: typeof navItems[0] | typeof adminNavItems[0]) => {
         if (item.exact) {
             return pathname === item.href;
         }
@@ -109,18 +181,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobile, isOp
         <>
             {/* Logo and Brand */}
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-10 h-10 bg-sky-500 rounded-xl shadow-lg cursor-pointer"
-                        onClick={() => {
-                            router.push("/");
-                        }}
-                    >
+                <div className="flex items-center space-x-3 select-none cursor-pointer"
+                    onClick={() => {
+                        router.push("/");
+                    }}
+                    title='Go to Home Page'>
+                    <div className="flex items-center justify-center w-10 h-10 bg-sky-500 rounded-xl shadow-lg cursor-pointer select-none"                                           >
                         <PenTool className="w-6 h-6 text-white" />
                     </div>
                     {(!isCollapsed || isMobile) && (
                         <div>
                             <h1 className="text-xl font-bold text-slate-800">Promptly Blog</h1>
-                            <p className="text-xs text-slate-500">Dashboard</p>
+                            <p className="text-xs text-slate-500">{isAdminRoute ? 'Admin' : 'User'} Dashboard</p>
                         </div>
                     )}
                 </div>
@@ -137,38 +209,75 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobile, isOp
                     )}
                 </button>
             </div>
-
             {/* Navigation Items */}
-            <nav className="flex-1 p-4 space-y-2">
-                {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const active = isActive(item);
+            <nav className="flex-1 p-4 space-y-2 scroll-auto hide-scrollbar overflow-y-auto">
+                {isAdminRoute
+                    ? adminNavItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item);
 
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={isMobile ? onClose : undefined}
-                            className={cn(
-                                "flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-                                active
-                                    ? "bg-sky-100 text-sky-700 shadow-sm"
-                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-800"
-                            )}
-                        >
-                            <Icon className={cn(
-                                "w-5 h-5 transition-colors",
-                                active ? "text-sky-600" : "text-slate-500 group-hover:text-slate-700"
-                            )} />
-                            {(!isCollapsed || isMobile) && (
-                                <span className="font-medium">{item.title}</span>
-                            )}
-                            {active && (
-                                <div className="ml-auto w-2 h-2 bg-sky-500 rounded-full" />
-                            )}
-                        </Link>
-                    );
-                })}
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={isMobile ? onClose : undefined}
+                                className={cn(
+                                    "flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                                    active
+                                        ? "bg-sky-100 text-sky-700 shadow-sm"
+                                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                                )}
+                            >
+                                <Icon
+                                    className={cn(
+                                        "w-5 h-5 transition-colors",
+                                        active
+                                            ? "text-sky-600"
+                                            : "text-slate-500 group-hover:text-slate-700"
+                                    )}
+                                />
+                                {(!isCollapsed || isMobile) && (
+                                    <span className="font-medium">{item.title}</span>
+                                )}
+                                {active && (
+                                    <div className="ml-auto w-2 h-2 bg-sky-500 rounded-full" />
+                                )}
+                            </Link>
+                        );
+                    })
+                    : navItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item);
+
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={isMobile ? onClose : undefined}
+                                className={cn(
+                                    "flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                                    active
+                                        ? "bg-sky-100 text-sky-700 shadow-sm"
+                                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                                )}
+                            >
+                                <Icon
+                                    className={cn(
+                                        "w-5 h-5 transition-colors",
+                                        active
+                                            ? "text-sky-600"
+                                            : "text-slate-500 group-hover:text-slate-700"
+                                    )}
+                                />
+                                {(!isCollapsed || isMobile) && (
+                                    <span className="font-medium">{item.title}</span>
+                                )}
+                                {active && (
+                                    <div className="ml-auto w-2 h-2 bg-sky-500 rounded-full" />
+                                )}
+                            </Link>
+                        );
+                    })}
             </nav>
 
             {/* User Profile Section */}
@@ -176,17 +285,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobile, isOp
                 {(!isCollapsed || isMobile) ? (
                     <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
                         <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-full flex items-center justify-center">
-                            <User className="w-5 h-5 text-white" />
+                            {loggedInUser.imageUrl ? (
+                                <img
+                                    src={loggedInUser.imageUrl}
+                                    alt={loggedInUser.name}
+                                    className="w-10 h-10 rounded-full"
+                                />
+                            ) : (
+                                <User className="w-5 h-5 text-white" />
+                            )}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 truncate">Rohit Kumar Yadav</p>
-                            <p className="text-xs text-slate-500 truncate">rohitkuyada@gmail.com</p>
+                            <p className="text-sm font-medium text-slate-800 truncate">{loggedInUser.name}</p>
+                            <p className="text-xs text-slate-500 truncate">{loggedInUser.email}</p>
                         </div>
                     </div>
                 ) : (
                     <div className="flex justify-center">
                         <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-full flex items-center justify-center">
-                            <User className="w-5 h-5 text-white" />
+                            {loggedInUser.imageUrl ? (
+                                <img
+                                    src={loggedInUser.imageUrl}
+                                    alt={loggedInUser.name}
+                                    className="w-10 h-10 rounded-full"
+                                />
+                            ) : (
+                                <User className="w-5 h-5 text-white" />
+                            )}
                         </div>
                     </div>
                 )}
@@ -295,8 +420,7 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, currentPageDesc
                                     className="flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
                                     onClick={() => {
                                         setIsUserDropdownOpen(false);
-                                        // Add logout logic here
-                                        console.log('Logout clicked');
+                                        toast.success("Logged out successfully!");
                                     }}
                                 >
                                     <LogOut className="w-5 h-5" />
@@ -315,26 +439,47 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, currentPageDesc
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+    const [isAdminRoute, setIsAdminRoute] = useState(false);
     const pathname = usePathname();
+    const { user } = useUser();
+    const [loggedInUser, setLoggedInUser] = useState({
+        name: '',
+        email: '',
+        imageUrl: ''
+    });
+
+    useEffect(() => {
+        if (user) {
+            setLoggedInUser({
+                name: user.fullName || '',
+                email: user.primaryEmailAddress?.emailAddress || '',
+                imageUrl: user.imageUrl || ''
+            });
+        }
+    }, [user]);
+
+    useEffect(() => {
+        setIsAdminRoute(pathname.startsWith('/admin'));
+        // toast.info(`Navigated to ${pathname}\nIsAdminRoute: ${isAdminRoute}`, { duration: 2000 });
+    }, [pathname]);
 
     // Get current page title based on pathname
     const getCurrentPageTitle = () => {
-        const currentItem = navItems.find(item => {
+        const currentItem = isAdminRoute ? navItems.find(item => {
             if (item.exact) {
                 return pathname === item.href;
             }
             return pathname.startsWith(item.href);
-        });
+        }) : navItems.find(item => item.href === pathname);
         return currentItem?.title || 'Dashboard';
     };
     const getCurrentPageDescription = () => {
-        const currentItem = navItems.find(item => {
+        const currentItem = isAdminRoute ? navItems.find(item => {
             if (item.exact) {
                 return pathname === item.href;
             }
             return pathname.startsWith(item.href);
-        }
-        );
+        }) : navItems.find(item => item.href === pathname);
         return currentItem?.description || 'Manage your blog and settings here.';
     };
 
@@ -360,6 +505,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
             {/* Sidebar */}
             <Sidebar
+                loggedInUser={loggedInUser}
+                isAdminRoute={isAdminRoute}
                 isCollapsed={isSidebarCollapsed}
                 onToggle={toggleSidebar}
                 isMobile={false}
@@ -369,6 +516,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
             {/* Mobile Sidebar */}
             <Sidebar
+                loggedInUser={loggedInUser}
+                isAdminRoute={isAdminRoute}
                 isCollapsed={false}
                 onToggle={toggleSidebar}
                 isMobile={true}
@@ -390,7 +539,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 />
 
                 {/* Page Content */}
-                <main className="relative ml-10 lg:ml-0 p-6 md:p-8 lg:p-10">
+                <main className="relative ml-10 lg:ml-0 p-6 md:p-2 lg:p-6">
                     {children}
                 </main>
             </div>
