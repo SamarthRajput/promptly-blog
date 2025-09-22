@@ -26,42 +26,50 @@ import { cn } from '@/lib/utils';
 const navItems = [
     {
         title: 'Overview',
+        description: 'Get a quick overview of your blog performance and recent activity.',
         href: '/dashboard',
         icon: LayoutDashboard,
         exact: true
     },
     {
         title: 'Analytics',
+        description: 'Dive deep into your blog analytics and track your growth.',
         href: '/dashboard/analytics',
         icon: BarChart3
     },
     {
         title: 'My Blogs',
+        description: 'Manage and edit your blog posts all in one place.',
         href: '/dashboard/blogs',
         icon: BookOpen
     },
     {
         title: 'Media Library',
+        description: 'Organize and manage your media files efficiently.',
         href: '/dashboard/media',
         icon: ImageIcon
     },
     {
         title: 'Notifications',
+        description: 'Stay updated with the latest notifications and alerts.',
         href: '/dashboard/notifications',
         icon: Bell
     },
     {
         title: 'Bookmarks',
+        description: 'Save and manage your favorite blog posts.',
         href: '/dashboard/bookmarks',
         icon: Bookmark
     },
     {
         title: 'Profile & Settings',
+        description: 'Manage your profile settings and preferences.',
         href: '/dashboard/settings',
         icon: Settings
     },
     {
         title: 'Help / Tips',
+        description: 'Access help resources and useful tips for using the dashboard.',
         href: '/dashboard/help',
         icon: HelpCircle
     }
@@ -81,6 +89,7 @@ interface SidebarProps {
 
 interface TopNavbarProps {
     currentPageTitle: string;
+    currentPageDescription: string;
     onMobileMenuToggle: () => void;
 }
 
@@ -170,8 +179,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobile, isOp
                             <User className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 truncate">John Doe</p>
-                            <p className="text-xs text-slate-500 truncate">john@example.com</p>
+                            <p className="text-sm font-medium text-slate-800 truncate">Rohit Kumar Yadav</p>
+                            <p className="text-xs text-slate-500 truncate">rohitkuyada@gmail.com</p>
                         </div>
                     </div>
                 ) : (
@@ -188,7 +197,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobile, isOp
     if (isMobile) {
         return (
             <>
-                {/* Mobile Overlay */}
                 {isOpen && (
                     <div
                         className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -196,7 +204,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobile, isOp
                     />
                 )}
 
-                {/* Mobile Sidebar */}
                 <aside className={cn(
                     "fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden",
                     isOpen ? "translate-x-0" : "-translate-x-full"
@@ -221,14 +228,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, isMobile, isOp
     );
 };
 
-// Top Navbar Component
-const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, onMobileMenuToggle }) => {
+const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, currentPageDescription, onMobileMenuToggle }) => {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
     return (
         <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 shadow-sm sticky top-0 z-20">
             <div className="flex items-center justify-between px-6 py-4">
-                {/* Mobile menu button and title */}
                 <div className="flex items-center space-x-4">
                     <button
                         onClick={onMobileMenuToggle}
@@ -239,11 +244,10 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, onMobileMenuTog
 
                     <div>
                         <h2 className="text-2xl font-bold text-slate-800">{currentPageTitle}</h2>
-                        <p className="text-sm text-slate-500">Welcome back to your dashboard</p>
+                        <p className="text-sm text-slate-500">{currentPageDescription}</p>
                     </div>
                 </div>
 
-                {/* User dropdown */}
                 <div className="relative">
                     <button
                         onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -323,6 +327,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         });
         return currentItem?.title || 'Dashboard';
     };
+    const getCurrentPageDescription = () => {
+        const currentItem = navItems.find(item => {
+            if (item.exact) {
+                return pathname === item.href;
+            }
+            return pathname.startsWith(item.href);
+        }
+        );
+        return currentItem?.description || 'Manage your blog and settings here.';
+    };
 
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -371,6 +385,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {/* Top Navbar */}
                 <TopNavbar
                     currentPageTitle={getCurrentPageTitle()}
+                    currentPageDescription={getCurrentPageDescription()}
                     onMobileMenuToggle={toggleMobileSidebar}
                 />
 
