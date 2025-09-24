@@ -110,12 +110,6 @@ const AdminUsersPage = () => {
 
     // Handle role change with confirmation
     const handleRoleChangeRequest = (userId: string, userName: string, currentRole: string, newRole: string) => {
-        // if (newRole === 'admin') {
-        //     setConfirmRoleChange({ userId, userName, currentRole, newRole });
-        // } else {
-        //     confirmRoleChange && handleRoleChange(userId, newRole as "user" | "admin");
-        // }
-        // confirm all role changes
         setConfirmRoleChange({ userId, userName, currentRole, newRole });
     };
 
@@ -192,20 +186,20 @@ const AdminUsersPage = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-semibold text-gray-900">User Management</h1>
-                        <p className="text-gray-600 mt-1">Manage user accounts, roles, and permissions</p>
+                        <h1 className="text-3xl font-semibold text-gray-900" title="User Management Dashboard">User Management</h1>
+                        <p className="text-gray-600 mt-1" title="Manage user accounts, roles, and permissions">Manage user accounts, roles, and permissions</p>
                     </div>
                 </div>
 
                 {/* Stats Overview */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6" title="User statistics overview">
                     {[
                         { label: "Total Users", value: total, icon: Users, color: "text-blue-600" },
                         { label: "Active Writers", value: users.filter(u => u.postCount > 0).length, icon: FileText, color: "text-green-600" },
                         { label: "Administrators", value: users.filter(u => u.siteRole === "admin").length, icon: Crown, color: "text-amber-600" },
                         { label: "New This Month", value: users.filter(u => new Date(u.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000).length, icon: UserCheck, color: "text-purple-600" }
                     ].map((stat, index) => (
-                        <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div key={index} className="bg-white rounded-lg border border-gray-200 p-6" title={stat.label}>
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">{stat.label}</p>
@@ -220,11 +214,11 @@ const AdminUsersPage = () => {
                 </div>
 
                 {/* Controls */}
-                <div className="bg-white rounded-lg border border-gray-200">
+                <div className="bg-white rounded-lg border border-gray-200" title="User controls and filters">
                     <div className="p-6 space-y-4">
                         {/* Search and Actions */}
                         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                            <div className="relative flex-1 max-w-md">
+                            <div className="relative flex-1 max-w-md" title="Search users by name or email">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
@@ -232,16 +226,18 @@ const AdminUsersPage = () => {
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    title="Type to search users by name or email"
                                 />
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3" title="Actions: filter, export, refresh">
                                 <button
                                     onClick={() => setShowFilters(!showFilters)}
                                     className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border transition-colors ${showFilters
                                         ? 'bg-blue-50 text-blue-700 border-blue-200'
                                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                                         }`}
+                                    title="Show or hide advanced filters"
                                 >
                                     <Filter className="w-4 h-4" />
                                     Filters
@@ -250,6 +246,7 @@ const AdminUsersPage = () => {
                                 <button
                                     onClick={handleExportUsers}
                                     className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 transition-colors"
+                                    title="Export current user list as CSV"
                                 >
                                     <Download className="w-4 h-4" />
                                     Export
@@ -259,6 +256,7 @@ const AdminUsersPage = () => {
                                     onClick={fetchUsers}
                                     disabled={loading}
                                     className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                    title="Refresh user list"
                                 >
                                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                                     Refresh
@@ -268,59 +266,63 @@ const AdminUsersPage = () => {
 
                         {/* Filters */}
                         {showFilters && (
-                            <div className="border-t border-gray-200 pt-4">
+                            <div className="border-t border-gray-200 pt-4" title="Advanced filters">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                    <div title="Filter users by role">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1" title="Role filter">Role</label>
                                         <select
                                             value={roleFilter}
                                             onChange={(e) => setRoleFilter(e.target.value as "all" | "user" | "admin")}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            title="Select user role to filter"
                                         >
-                                            <option value="all">All Roles</option>
-                                            <option value="user">Users</option>
-                                            <option value="admin">Admins</option>
+                                            <option value="all" title="Show all roles">All Roles</option>
+                                            <option value="user" title="Show only users">Users</option>
+                                            <option value="admin" title="Show only admins">Admins</option>
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Activity</label>
+                                    <div title="Filter users by activity">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1" title="Activity filter">Activity</label>
                                         <select
                                             value={activityFilter}
                                             onChange={(e) => setActivityFilter(e.target.value as "all" | "none" | "published")}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            title="Select activity status to filter"
                                         >
-                                            <option value="all">All Users</option>
-                                            <option value="none">No Posts</option>
-                                            <option value="published">Has Published</option>
+                                            <option value="all" title="Show all users">All Users</option>
+                                            <option value="none" title="Show users with no posts">No Posts</option>
+                                            <option value="published" title="Show users who have published">Has Published</option>
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                                    <div title="Sort users by field">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1" title="Sort by">Sort By</label>
                                         <select
                                             value={sortBy}
                                             onChange={(e) => setSortBy(e.target.value)}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            title="Select field to sort users"
                                         >
-                                            <option value="createdAt">Join Date</option>
-                                            <option value="name">Name</option>
-                                            <option value="email">Email</option>
-                                            <option value="postCount">Posts</option>
-                                            <option value="commentCount">Comments</option>
-                                            <option value="reactionCount">Reactions</option>
+                                            <option value="createdAt" title="Sort by join date">Join Date</option>
+                                            <option value="name" title="Sort by name">Name</option>
+                                            <option value="email" title="Sort by email">Email</option>
+                                            <option value="postCount" title="Sort by posts">Posts</option>
+                                            <option value="commentCount" title="Sort by comments">Comments</option>
+                                            <option value="reactionCount" title="Sort by reactions">Reactions</option>
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+                                    <div title="Sort order">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1" title="Order">Order</label>
                                         <select
                                             value={sortDir}
                                             onChange={(e) => setSortDir(e.target.value as "asc" | "desc")}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            title="Select sort order"
                                         >
-                                            <option value="desc">Descending</option>
-                                            <option value="asc">Ascending</option>
+                                            <option value="desc" title="Descending order">Descending</option>
+                                            <option value="asc" title="Ascending order">Ascending</option>
                                         </select>
                                     </div>
                                 </div>
@@ -340,13 +342,11 @@ const AdminUsersPage = () => {
                 )}
 
                 {/* Users Table */}
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden" title="User list table">
                     {/* Add a user-friendly title above the table */}
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-                        <h2 className="text-lg font-semibold text-gray-800">
-                            Users List &mdash; Review, Search, and Manage
-                        </h2>
-                        <p className="text-sm text-gray-500 mt-1">
+                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50" title="Users table header">
+                        <h2 className="text-lg font-semibold text-gray-800" title="Users List">Users List &mdash; Review, Search, and Manage</h2>
+                        <p className="text-sm text-gray-500 mt-1" title="Table usage instructions">
                             Use the controls above to filter, search, or export users.
                         </p>
                     </div>
@@ -366,29 +366,29 @@ const AdminUsersPage = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                            <div className="overflow-x-auto" title="Scrollable user table">
+                                <table className="min-w-full divide-y divide-gray-200" title="User data table">
+                                    <thead className="bg-gray-50" title="Table columns">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stats</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" title="User column">User</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" title="Role column">Role</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" title="Activity column">Activity</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" title="Stats column">Stats</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" title="Joined column">Joined</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white divide-y divide-gray-200" title="User rows">
                                         {users.map((user) => {
                                             const activityStatus = getActivityStatus(user.postCount);
                                             return (
-                                                <tr key={user.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                <tr key={user.id} className="hover:bg-gray-50" title={`User row for ${user.name}`}>
+                                                    <td className="px-6 py-4 whitespace-nowrap" title="User info">
                                                         <div className="flex items-center">
-                                                            <div className="h-10 w-10 flex-shrink-0">
+                                                            <div className="h-10 w-10 flex-shrink-0" title="User avatar">
                                                                 {user.avatarUrl ? (
-                                                                    <img className="h-10 w-10 rounded-full object-cover" src={user.avatarUrl} alt={user.name} />
+                                                                    <img className="h-10 w-10 rounded-full object-cover" src={user.avatarUrl} alt={user.name} title={`Avatar of ${user.name}`} />
                                                                 ) : (
-                                                                    <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                                                    <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center" title="Default avatar">
                                                                         <span className="text-sm font-medium text-gray-700"
                                                                             title={user.name}>
                                                                             {user.name.charAt(0).toUpperCase()}
@@ -396,20 +396,20 @@ const AdminUsersPage = () => {
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            <div className="ml-4">
-                                                                <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                                            <div className="ml-4" title="User name and email">
+                                                                <div className="text-sm font-medium text-gray-900" title="User name">{user.name}</div>
                                                                 <div className="text-sm text-gray-500 flex items-center"
-                                                                    title={`${user.email}`}>
+                                                                    title={`Email: ${user.email}`}>
                                                                     <Mail className="w-3 h-3 mr-1" />
                                                                     {user.email}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-6 py-4 whitespace-nowrap" title="User role">
                                                         <div className="flex items-center space-x-2"
-                                                            title={`Current role: ${user.siteRole}\nClick to change role`}>
-                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadge(user.siteRole)}`}>
+                                                            title={`Current role: ${user.siteRole}. Use dropdown to change role.`}>
+                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadge(user.siteRole)}`} title={`Role badge: ${user.siteRole}`}>
                                                                 {getRoleIcon(user.siteRole)}
                                                                 <span className="ml-1 capitalize">{user.siteRole}</span>
                                                             </span>
@@ -422,35 +422,36 @@ const AdminUsersPage = () => {
                                                                     e.target.value
                                                                 )}
                                                                 className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                title="Change user role"
                                                             >
-                                                                <option value="user">User</option>
-                                                                <option value="admin">Admin</option>
+                                                                <option value="user" title="Set role to User">User</option>
+                                                                <option value="admin" title="Set role to Admin">Admin</option>
                                                             </select>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${activityStatus.color}`}>
+                                                    <td className="px-6 py-4 whitespace-nowrap" title="User activity status">
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${activityStatus.color}`} title={`Activity: ${activityStatus.text}`}>
                                                             {activityStatus.text}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-6 py-4 whitespace-nowrap" title="User stats">
                                                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                                            <div className="flex items-center">
+                                                            <div className="flex items-center" title={`Total posts: ${user.postCount}`}>
                                                                 <FileText className="w-4 h-4 mr-1" />
                                                                 <span>{user.postCount}</span>
                                                             </div>
-                                                            <div className="flex items-center">
+                                                            <div className="flex items-center" title={`Total comments: ${user.commentCount}`}>
                                                                 <MessageSquare className="w-4 h-4 mr-1" />
                                                                 <span>{user.commentCount}</span>
                                                             </div>
-                                                            <div className="flex items-center">
+                                                            <div className="flex items-center" title={`Total reactions: ${user.reactionCount}`}>
                                                                 <Heart className="w-4 h-4 mr-1" />
                                                                 <span>{user.reactionCount}</span>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="flex items-center text-sm text-gray-500">
+                                                    <td className="px-6 py-4 whitespace-nowrap" title="User join date">
+                                                        <div className="flex items-center text-sm text-gray-500" title="Joined date">
                                                             <Calendar className="w-4 h-4 mr-1" />
                                                             <span>{new Date(user.createdAt).toLocaleDateString()}</span>
                                                         </div>
@@ -463,10 +464,10 @@ const AdminUsersPage = () => {
                             </div>
 
                             {/* Pagination */}
-                            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6" title="Pagination controls">
                                 <div className="flex-1 flex justify-between items-center">
-                                    <div className="flex items-center text-sm text-gray-700">
-                                        <span>Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total} results</span>
+                                    <div className="flex items-center text-sm text-gray-700" title="Pagination info">
+                                        <span title="Current results range">Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total} results</span>
                                         <select
                                             value={limit}
                                             onChange={(e) => {
@@ -474,25 +475,27 @@ const AdminUsersPage = () => {
                                                 setPage(1);
                                             }}
                                             className="ml-2 border border-gray-300 rounded px-2 py-1 text-sm"
+                                            title="Select number of results per page"
                                         >
-                                            <option value={10}>10</option>
-                                            <option value={20}>20</option>
-                                            <option value={50}>50</option>
+                                            <option value={10} title="Show 10 per page">10</option>
+                                            <option value={20} title="Show 20 per page">20</option>
+                                            <option value={50} title="Show 50 per page">50</option>
                                         </select>
-                                        <span className="ml-1">per page</span>
+                                        <span className="ml-1" title="Results per page">per page</span>
                                     </div>
 
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-2" title="Page navigation">
                                         <button
                                             onClick={() => setPage(page - 1)}
                                             disabled={page === 1}
                                             className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="Go to previous page"
                                         >
                                             <ChevronLeft className="w-4 h-4 mr-1" />
                                             Previous
                                         </button>
 
-                                        <div className="flex items-center space-x-1">
+                                        <div className="flex items-center space-x-1" title="Page numbers">
                                             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                                 const pageNum = i + Math.max(1, page - 2);
                                                 return (
@@ -503,6 +506,7 @@ const AdminUsersPage = () => {
                                                             ? 'bg-blue-600 text-white'
                                                             : 'text-gray-700 hover:bg-gray-100'
                                                             }`}
+                                                        title={`Go to page ${pageNum}`}
                                                     >
                                                         {pageNum}
                                                     </button>
@@ -514,6 +518,7 @@ const AdminUsersPage = () => {
                                             onClick={() => setPage(page + 1)}
                                             disabled={page === totalPages}
                                             className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="Go to next page"
                                         >
                                             Next
                                             <ChevronRight className="w-4 h-4 ml-1" />
@@ -527,27 +532,28 @@ const AdminUsersPage = () => {
 
                 {/* Role Change Confirmation Modal */}
                 {confirmRoleChange && (
-                    <div className="fixed inset-0 bg-blue-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-lg max-w-md w-full p-6">
+                    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity" title="Role change confirmation dialog">
+                        <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl" title="Confirm role change">
                             <div className="flex items-center mb-4">
                                 <AlertTriangle className="w-6 h-6 text-amber-600 mr-2" />
-                                <h3 className="text-lg font-medium text-gray-900">Confirm Role Change</h3>
+                                <h3 className="text-lg font-medium text-gray-900" title="Confirm role change heading">Confirm Role Change</h3>
                             </div>
-                            <p className="text-sm text-gray-700 mb-4">
+                            <p className="text-sm text-gray-700 mb-4" title="Role change explanation">
                                 Are you sure you want to change <strong>{confirmRoleChange.userName}</strong> to <strong>{confirmRoleChange.newRole.toLocaleUpperCase()}</strong>?
                                 This will give them {confirmRoleChange.newRole === 'admin' ? 'full administrative access' : 'standard user permissions'}.
                             </p>
-                            <div className="flex justify-end space-x-3">
+                            <div className="flex justify-end space-x-3" title="Confirmation actions">
                                 <button
                                     onClick={() => setConfirmRoleChange(null)}
                                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                    title="Cancel role change"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={() => handleRoleChange(confirmRoleChange.userId, confirmRoleChange.newRole as "user" | "admin")}
                                     className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
-                                    title="Changing roles can impact user access and permissions. Proceed with caution."
+                                    title="Confirm and apply role change"
                                 >
                                     Confirm
                                 </button>

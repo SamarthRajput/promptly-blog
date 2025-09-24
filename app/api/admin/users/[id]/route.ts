@@ -78,6 +78,9 @@ export async function PUT(
     paramsPromise: Promise<Params>
 ): Promise<NextResponse> {
     try {
+        // paramsPromise is awaited before accessing its properties
+        const params = await paramsPromise;
+        const userId = params.params.id;
         const clerkUser = await currentUser();
         if (!clerkUser || !clerkUser.id) {
             return NextResponse.json({ error: "Unauthorized, please log in." }, { status: 401 });
@@ -87,8 +90,6 @@ export async function PUT(
             return NextResponse.json({ error: "Access Denied. Admins only." }, { status: 403 });
         }
         // get id from URL : /api/admin/users/[id]
-        const { params } = await paramsPromise;
-        const userId = params.id;
         if (!userId) {
             console.error("User ID is required.");
             return NextResponse.json({ error: "User ID is required." }, { status: 400 });
