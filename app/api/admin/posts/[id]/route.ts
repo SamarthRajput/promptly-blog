@@ -1,7 +1,7 @@
 // app/api/admin/posts/[id]/route.ts
 import { NextResponse } from "next/server";
 import { posts, approvalLog, media, user, postCollaborators, postCategories, postTags, comments, postReactions, postRevisions } from "@/db/schema";
-import { and, desc, eq, ilike } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/actions/syncUser";
 import { currentUser } from "@clerk/nextjs/server";

@@ -4,14 +4,9 @@ import React, { useState, useEffect } from 'react';
 import {
     ArrowLeft,
     Calendar,
-    Clock,
     User,
     Tag,
     FolderOpen,
-    Eye,
-    Globe,
-    Lock,
-    EyeOff,
     CheckCircle,
     XCircle,
     Archive,
@@ -19,11 +14,9 @@ import {
     AlertTriangle,
     MessageSquare,
     Heart,
-    FileText,
     Edit,
     Users,
     History,
-    Save,
     X
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -41,7 +34,7 @@ interface Post {
     canonicalUrl: string | null;
     metaTitle: string | null;
     metaDescription: string | null;
-    status: "draft" | "submitted" | "under_review" | "approved" | "scheduled" | "published" | "rejected" | "archived";
+    status: "draft" | "under_review" | "approved" | "scheduled" | "rejected" | "archived";
     publishedAt: Date | null;
     scheduledAt: Date | null;
     submittedAt: Date | null;
@@ -186,7 +179,6 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
         if (postId) {
             fetchPost();
         }
-        toast.info(`Post ID: ${postId}`, { duration: 3000 });
     }, [postId]);
 
     // Handle admin actions
