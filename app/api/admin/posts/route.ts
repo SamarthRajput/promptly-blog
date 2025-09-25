@@ -50,7 +50,6 @@ export async function GET(req: Request) {
                 excerpt: posts.excerpt,
                 coverImage: media.url,
                 status: posts.status,
-                visibility: posts.visibility,
                 submittedAt: posts.submittedAt,
                 scheduledAt: posts.scheduledAt,
                 publishedAt: posts.publishedAt,

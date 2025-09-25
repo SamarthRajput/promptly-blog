@@ -80,11 +80,9 @@ export async function PUT(
                 decidedByUserId: adminId,
                 decision: statusChange as
                     | "draft"
-                    | "submitted"
                     | "under_review"
                     | "approved"
                     | "scheduled"
-                    | "published"
                     | "rejected"
                     | "archived",
                 reason: reason || null,
@@ -101,6 +99,7 @@ export async function PUT(
 export async function GET(req: Request,
     { params }: { params: { id: string } }
 ) {
+    console.log("\n\nFetching post for admin with ID:", params.id);
     try {
         // Check if user is logged in
         const clerkUser = await currentUser();
@@ -124,7 +123,8 @@ export async function GET(req: Request,
             comments: comments,
             reactions: postReactions,
             revisions: postRevisions,
-            auditLog: approvalLog
+            auditLog: approvalLog,
+            media: media,
         }).from(posts)
             .leftJoin(user, eq(posts.authorId, user.id))
             .leftJoin(postCollaborators, eq(posts.id, postCollaborators.postId))
@@ -134,6 +134,7 @@ export async function GET(req: Request,
             .leftJoin(postReactions, eq(posts.id, postReactions.postId))
             .leftJoin(postRevisions, eq(posts.id, postRevisions.postId))
             .leftJoin(approvalLog, eq(posts.id, approvalLog.postId))
+            .leftJoin(media, eq(posts.coverImageId, media.id))
             .where(eq(posts.id, postId))
             .limit(1);
 
@@ -143,7 +144,7 @@ export async function GET(req: Request,
             message: "Post fetched successfully"
         });
     } catch (error) {
-        console.error(error);
+        console.error(`Error fetching posts for admin: ${error}`);
         return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 });
     }
 }

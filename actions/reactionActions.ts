@@ -46,7 +46,9 @@ export async function toggleReaction(postId: string, reactionType: ReactionType)
     .where(
       and(
         eq(posts.id, postId),
-        eq(posts.status, 'published')
+        eq(posts.status, 'approved'),
+        eq(posts.status, 'rejected'),
+        eq(posts.status, 'under_review')
       )
     );
 
@@ -100,7 +102,7 @@ export async function getPostReactions(postId: string): Promise<{
 }> {
   // Use syncUser to get current user (returns null if not authenticated)
   const clerkUser = await syncUser();
-  
+
   // Get reaction counts
   const reactionCountsResult = await db
     .select({

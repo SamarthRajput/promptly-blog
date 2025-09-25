@@ -51,7 +51,9 @@ export async function addComment(postId: string, content: string) {
     .where(
       and(
         eq(posts.id, postId),
-        eq(posts.status, 'published')
+        eq(posts.status, 'approved'),
+        eq(posts.status, 'rejected'),
+        eq(posts.status, 'under_review')
       )
     );
 

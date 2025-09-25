@@ -24,21 +24,12 @@ export const contactStatusEnum = pgEnum("contact_status", [
 
 // Post lifecycle for admin review + publishing
 export const postStatusEnum = pgEnum("post_status", [
-    "draft",        // author/collaborators edit
-    "submitted",    // submitted for admin review
-    "under_review", // (optional) triage/moderation queue
+    "draft",        // author/collaborators editing
+    "under_review", // submitted, waiting for admin review
     "approved",     // approved by admin (may schedule/publish next)
     "scheduled",    // approved + has scheduledAt
-    "published",    // live
     "rejected",     // rejected (store reason)
     "archived",     // no longer actively shown
-]);
-
-// Visibility of a post
-export const visibilityEnum = pgEnum("visibility", [
-    "public", // after admin approval, visible to all and our platforms
-    "unlisted", // not listed publicly, but accessible with a link no approval required, if approved move to public
-    "private",  // only visible to the user and collaborators
 ]);
 
 export const siteRoleEnum = pgEnum("site_role", [
@@ -177,8 +168,7 @@ export const posts = pgTable(
         metaDescription: varchar("meta_description", { length: 512 }),
 
         // Publication
-        status: postStatusEnum("status").default("draft").notNull(),
-        visibility: visibilityEnum("visibility").default("public").notNull(),
+        status: postStatusEnum("status").default("under_review").notNull(),
         publishedAt: timestamp("published_at", { withTimezone: true }),
         scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
         submittedAt: timestamp("submitted_at", { withTimezone: true }),
@@ -279,7 +269,7 @@ export const approvalLog = pgTable(
         decidedByUserId: uuid("decided_by_user_id")
             .notNull()
             .references(() => user.id),
-        decision: postStatusEnum("decision").notNull(), // approved | rejected (use enum to keep consistent)
+        decision: postStatusEnum("decision").notNull(), // approved | rejected
         reason: text("reason"),
         decidedAt: timestamp("decided_at", { withTimezone: true })
             .defaultNow()

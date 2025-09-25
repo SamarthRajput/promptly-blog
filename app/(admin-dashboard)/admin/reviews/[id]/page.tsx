@@ -27,6 +27,7 @@ import {
     X
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
 
 interface Post {
     id: string;
@@ -122,6 +123,14 @@ interface AuditLog {
     reason: string | null;
     decidedAt: Date;
 }
+interface Media {
+    url: string;
+    type: string;
+    provider: string;
+    altText: string | null;
+    createdBy: string;
+    createdAt: Date;
+}
 
 interface PostData {
     post: Post;
@@ -133,13 +142,10 @@ interface PostData {
     reactions: Reaction[];
     revisions: Revision[];
     auditLog: AuditLog | null;
+    media: Media | null;
 }
 
-interface PostReviewDetailPageProps {
-    postId: string;
-}
-
-const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) => {
+const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) => {
     const [data, setData] = useState<PostData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -148,6 +154,8 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
     const [actionReason, setActionReason] = useState('');
     const [scheduledDate, setScheduledDate] = useState('');
     const [scheduledTime, setScheduledTime] = useState('');
+
+    const { id: postId } = React.use(params);
 
     // Fetch post data
     useEffect(() => {
@@ -166,6 +174,10 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                 const result = await response.json();
                 setData(result.data[0]);
             } catch (err: any) {
+                toast.error(err.message, {
+                    description: 'Could not load post data. Please try again.',
+                    action: { label: 'Retry', onClick: () => fetchPost() }
+                });
                 setError(err.message);
             } finally {
                 setLoading(false);
@@ -175,6 +187,7 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
         if (postId) {
             fetchPost();
         }
+        toast.info(`Post ID: ${postId}`, { duration: 3000 });
     }, [postId]);
 
     // Handle admin actions
@@ -246,13 +259,11 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
 
     const canTakeAction = (currentStatus: string) => {
         const allowedActions = {
-            submitted: ['approve', 'reject'],
-            under_review: ['approve', 'reject', 'schedule'],
-            approved: ['publish', 'schedule', 'reject'],
-            scheduled: ['publish', 'approve'],
-            published: ['archive'],
-            rejected: ['approve'],
-            archived: ['approve']
+            under_review: ['approve', 'reject'],
+            approved: ['reject'],
+            scheduled: ['approve'], // approve the scheduled one to be public when live on scheduled.
+            rejected: ['approve'], // 
+            archived: ['']
         };
         return allowedActions[currentStatus as keyof typeof allowedActions] || [];
     };
@@ -280,13 +291,14 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                     <Alert className="border-red-200 bg-red-50">
                         <AlertTriangle className="h-4 w-4 text-red-600" />
                         <AlertDescription className="text-red-800">
-                            {error || 'Post not found'}
+                            {error}
                         </AlertDescription>
                     </Alert>
                 </div>
             </div>
         );
     }
+
 
     const { post, author, collaborators, categories, tags, comments, reactions, revisions, auditLog } = data;
     const statusBadge = getStatusBadge(post.status);
@@ -332,7 +344,7 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                             {post.coverImageId && (
                                 <div className="mb-6">
                                     <img
-                                        src={post.coverImageId}
+                                        src={data.media?.url || '/placeholder-image.png'}
                                         alt={post.title}
                                         className="w-full h-64 object-cover rounded-lg"
                                     />
@@ -353,7 +365,7 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                         </div>
 
                         {/* Comments Section */}
-                        {comments.length > 0 && (
+                        {comments && comments.length > 0 && (
                             <div className="bg-white rounded-lg border border-gray-200 p-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                                     <MessageSquare className="w-5 h-5 mr-2" />
@@ -378,7 +390,7 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                         )}
 
                         {/* Revisions History */}
-                        {revisions.length > 0 && (
+                        {revisions && revisions.length > 0 && (
                             <div className="bg-white rounded-lg border border-gray-200 p-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                                     <History className="w-5 h-5 mr-2" />
@@ -434,6 +446,14 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                             </div>
                         </div>
 
+                        {/* // rejected reason if availble */}
+                        {post.rejectionReason && (
+                            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                <h3 className="text-lg font-medium text-gray-900 mb-4">Rejection Reason</h3>
+                                <p className="text-sm text-gray-700">{post.rejectionReason}</p>
+                            </div>
+                        )}
+
                         {/* Post Details */}
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Post Details</h3>
@@ -485,7 +505,7 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Taxonomy</h3>
                             <div className="space-y-4">
-                                {categories.length > 0 && (
+                                {categories && categories.length > 0 && (
                                     <div>
                                         <p className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                                             <FolderOpen className="w-4 h-4 mr-1" />
@@ -504,7 +524,7 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                                     </div>
                                 )}
 
-                                {tags.length > 0 && (
+                                {tags && tags.length > 0 && (
                                     <div>
                                         <p className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                                             <Tag className="w-4 h-4 mr-1" />
@@ -526,7 +546,7 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                         </div>
 
                         {/* Collaborators */}
-                        {collaborators.length > 0 && (
+                        {collaborators && collaborators.length > 0 && (
                             <div className="bg-white rounded-lg border border-gray-200 p-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                                     <Users className="w-5 h-5 mr-2" />
@@ -551,7 +571,7 @@ const PostReviewDetailPage: React.FC<PostReviewDetailPageProps> = ({ postId }) =
                         )}
 
                         {/* Reactions */}
-                        {reactions.length > 0 && (
+                        {reactions && reactions.length > 0 && (
                             <div className="bg-white rounded-lg border border-gray-200 p-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                                     <Heart className="w-5 h-5 mr-2" />

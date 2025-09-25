@@ -28,7 +28,9 @@ export async function getAnalyticsData(
     .where(
       and(
         eq(posts.authorId, dbUser.id),
-        eq(posts.status, 'published'),
+        eq(posts.status, 'approved'),
+        eq(posts.status, 'rejected'),
+        eq(posts.status, 'under_review'),
         gte(posts.publishedAt, startDate),
         lte(posts.publishedAt, endDate)
       )
@@ -96,7 +98,9 @@ async function getMonthlyEngagementData(
     .where(
       and(
         eq(posts.authorId, userId),
-        eq(posts.status, 'published'),
+        eq(posts.status, 'approved'),
+        eq(posts.status, 'rejected'),
+        eq(posts.status, 'under_review'),
         gte(posts.publishedAt, startDate),
         lte(posts.publishedAt, endDate)
       )
@@ -153,7 +157,9 @@ async function getTopPerformingPosts(
     .where(
       and(
         eq(posts.authorId, userId),
-        eq(posts.status, 'published'),
+        eq(posts.status, 'approved'),
+        eq(posts.status, 'rejected'),
+        eq(posts.status, 'under_review'),
         gte(posts.publishedAt, startDate),
         lte(posts.publishedAt, endDate)
       )
@@ -164,7 +170,7 @@ async function getTopPerformingPosts(
   return topPostsData.map((post) => {
     const views = 0; // Placeholder until you implement view tracking
     const engagementRate = views > 0 ? ((post.likes + post.comments) / views) * 100 : 0;
-    
+
     return {
       id: post.id,
       title: post.title,

@@ -31,7 +31,7 @@ export const fetchAllPostsByUserId = async (
 
     // If onlyPublic = true, add extra filter
     const condition = onlyPublic
-        ? and(baseCondition, eq(posts.visibility, "public"))
+        ? and(baseCondition, eq(posts.status, 'approved'))
         : baseCondition;
 
     // Select posts with metadata
@@ -54,9 +54,8 @@ export const fetchAllPostsByUserId = async (
             metaTitle: posts.metaTitle,
             metaDescription: posts.metaDescription,
 
-            // Status & visibility
+            // Status
             status: posts.status,
-            visibility: posts.visibility,
 
             // Dates
             createdAt: posts.createdAt,
