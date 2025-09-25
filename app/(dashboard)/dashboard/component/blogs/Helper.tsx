@@ -78,7 +78,7 @@ export const statusConfig = {
 export const AnalyticsCard = ({ blogs }: { blogs: UsersBlogType[] }) => {
     const stats = useMemo(() => {
         const totalBlogs = blogs.length;
-        const publishedBlogs = blogs.filter(b => b.status === 'published').length;
+        const publishedBlogs = blogs.filter(b => b.status === 'approved').length;
         const totalViews = blogs.reduce((sum, blog) => sum + (blog.wordCount || 0), 0);
         const totalReactions = blogs.reduce((sum, blog) => sum + (typeof blog.reactionCount === 'number' ? blog.reactionCount : 0), 0);
         const totalComments = blogs.reduce((sum, blog) => sum + (typeof blog.commentCount === 'number' ? blog.commentCount : 0), 0);
@@ -295,7 +295,7 @@ export const EnhancedBlogCard = ({
                     onCheckedChange={(checked) => onSelect(blog.id, !!checked)}
                     className="absolute top-3 left-3 bg-white border-white shadow-sm"
                 />
-                {blog.status === 'published' && (
+                {blog.status === 'approved' && (
                     <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                         Live
                     </div>
