@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { comments, user, posts } from "@/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, or, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncUser } from "./syncUser";
 
@@ -51,9 +51,15 @@ export async function addComment(postId: string, content: string) {
     .where(
       and(
         eq(posts.id, postId),
-        eq(posts.status, 'approved'),
-        eq(posts.status, 'rejected'),
-        eq(posts.status, 'under_review')
+        or(
+          eq(posts.status, 'approved'),
+          eq(posts.status, 'rejected'),
+          eq(posts.status, 'under_review'),
+          and(
+            eq(posts.status, 'scheduled'),
+            lte(posts.scheduledAt, new Date())
+          )
+        )
       )
     );
 

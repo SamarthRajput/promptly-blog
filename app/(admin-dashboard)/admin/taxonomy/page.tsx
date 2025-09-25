@@ -21,12 +21,13 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import { SampleCategories, SampleTags } from '@/lib/sample-taxonomy';
 
 interface Category {
   id: string;
   name: string;
   createdAt: Date;
-  postsCount: number;
+  postsCount?: number;
 }
 
 interface TagItem {
@@ -66,6 +67,8 @@ const TaxonomyAdminPage = () => {
   // Form states
   const [newItemName, setNewItemName] = useState('');
   const [newItemSlug, setNewItemSlug] = useState('');
+
+  const [uploadingBulk, setUploadingBulk] = useState(false);
 
   // Fetch taxonomy data
   const fetchTaxonomy = async () => {
@@ -128,6 +131,57 @@ const TaxonomyAdminPage = () => {
       setError(err.message);
     }
   };
+
+  const handleSampleTaxonomyCreate = async () => {
+    try {
+      const allTaxonomies = [
+        ...SampleCategories.map((category) => ({
+          type: "category",
+          name: category,
+          slug: generateSlug(category),
+        })),
+        ...SampleTags.map((tag) => ({
+          type: "tag",
+          name: tag,
+          slug: generateSlug(tag),
+        })),
+      ];
+
+      setUploadingBulk(true);
+      await Promise.all(
+        allTaxonomies.map(async (item) => {
+          try {
+            const res = await fetch("/api/admin/taxonomy", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(item),
+            });
+
+            // if taxonomy already exists, skip without throwing
+            if (!res.ok && res.status !== 409) {
+              throw new Error(`Failed to insert ${item.type}: ${item.name}`);
+            }
+            const data = await res.json();
+            setCategories((prev) => item.type === "category" && data.category ? [...prev, data.category] : prev);
+            setTags((prev) => item.type === "tag" && data.tag ? [...prev, data.tag] : prev);
+            toast.info('Added');
+          } catch (err) {
+            console.error("Taxonomy insert error:", err);
+          }
+        })
+      );
+
+      setUploadingBulk(false);
+      toast.success("Default categories & tags created (duplicates skipped)");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong while creating taxonomy");
+      toast.error("Failed to create default taxonomy");
+    } finally {
+      setUploadingBulk(false);
+      fetchTaxonomy();
+    }
+  };
+
 
   // Handle updating item
   const handleUpdate = async () => {
@@ -230,8 +284,8 @@ const TaxonomyAdminPage = () => {
   const totalTags = tags.length;
   const unusedCategories = categories.filter(c => c.postsCount === 0).length;
   const unusedTags = tags.filter(t => t.postsCount === 0).length;
-  const mostUsedCategories = categories.sort((a, b) => b.postsCount - a.postsCount).slice(0, 5);
-  const mostUsedTags = tags.sort((a, b) => b.postsCount - a.postsCount).slice(0, 5);
+  const mostUsedCategories = categories.sort((a, b) => (b.postsCount || 0) - (a.postsCount || 0)).slice(0, 5);
+  const mostUsedTags = tags.sort((a, b) => (b.postsCount || 0) - (a.postsCount || 0)).slice(0, 5);
 
   const filteredData = getFilteredData();
 
@@ -613,7 +667,7 @@ const TaxonomyAdminPage = () => {
                                 type: activeTab === 'categories' ? 'category' : 'tag',
                                 id: item.id,
                                 name: item.name,
-                                postsCount: item.postsCount
+                                postsCount: item.postsCount || 0
                               })}
                               className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
                             >
@@ -628,6 +682,29 @@ const TaxonomyAdminPage = () => {
               </table>
             </div>
           )}
+          <p className="p-4 text-sm text-gray-500">Showing {filteredData.length} of {activeTab === 'categories' ? totalCategories : totalTags} {activeTab}</p>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={handleSampleTaxonomyCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 transition-colors"
+            disabled={uploadingBulk}
+          >
+            {uploadingBulk ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span className="text-white">Updating the taxonomy with default values...</span></>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Add Sample Categories & Tags
+              </>
+            )}
+          </button>
         </div>
 
         {/* Delete Confirmation Modal */}
@@ -666,6 +743,7 @@ const TaxonomyAdminPage = () => {
                     </div>
                   </div>
                 )}
+                <p className="text-sm text-gray-500 mt-2">This action cannot be undone.</p>
               </div>
 
               <div className="flex justify-end space-x-3">

@@ -1,7 +1,7 @@
 // app/api/admin/taxonomy/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, or } from "drizzle-orm";
 import { categories, postCategories, postTags, tags } from "@/db/schema";
 import { getCurrentUser } from "@/actions/syncUser";
 import { currentUser } from "@clerk/nextjs/server";
@@ -67,7 +67,6 @@ export async function GET() {
     }
 }
 
-
 export async function POST(req: Request) {
     try {
         // Check if user is logged in
@@ -82,6 +81,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Access Denied. Admins only." }, { status: 403 });
         }
 
+        // delete all existing categories and tags
+        await db.delete(categories);
+        await db.delete(tags);
+        console.log("Deleted all existing categories and tags");
+
         const body: BodyType = await req.json();
 
         if (!body.type || !body.name) {
@@ -92,6 +96,17 @@ export async function POST(req: Request) {
         }
 
         if (body.type === "category") {
+            // Check if category already exists
+            const existingCategoryArr = await db
+                .select()
+                .from(categories)
+                .where(eq(categories.name, body.name))
+                .limit(1);
+            const existingCategory = existingCategoryArr[0];
+            if (existingCategory) {
+                return NextResponse.json({ success: true, category: existingCategory, message: "Category already exists" });
+            }
+
             const [inserted] = await db.insert(categories).values({ name: body.name }).returning();
             return NextResponse.json({ success: true, category: inserted });
         }
@@ -103,9 +118,25 @@ export async function POST(req: Request) {
                     { status: 400 }
                 );
             }
+
+            // Check if tag with same name or slug already exists
+            const existingTagArr = await db
+                .select()
+                .from(tags)
+                .where(
+                    or(eq(tags.name, body.name), eq(tags.slug, body.slug))
+                )
+                .limit(1);
+            const existingTag = existingTagArr[0];
+            if (existingTag) {
+                return NextResponse.json({ success: true, tag: existingTag, message: "Tag already exists" });
+            }
+
             const [inserted] = await db.insert(tags).values({ name: body.name, slug: body.slug }).returning();
             return NextResponse.json({ success: true, tag: inserted });
         }
+
+        return NextResponse.json({ success: false, message: "Invalid type" }, { status: 400 });
     } catch (error) {
         console.error(error);
         return NextResponse.json({ success: false, message: "Failed to create item" }, { status: 500 });

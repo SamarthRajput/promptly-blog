@@ -224,11 +224,9 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
     const getStatusBadge = (status: Post['status']) => {
         const badges = {
             draft: { color: 'bg-gray-100 text-gray-800', text: 'Draft' },
-            submitted: { color: 'bg-blue-100 text-blue-800', text: 'Submitted' },
             under_review: { color: 'bg-yellow-100 text-yellow-800', text: 'Under Review' },
             approved: { color: 'bg-green-100 text-green-800', text: 'Approved' },
             scheduled: { color: 'bg-purple-100 text-purple-800', text: 'Scheduled' },
-            published: { color: 'bg-emerald-100 text-emerald-800', text: 'Published' },
             rejected: { color: 'bg-red-100 text-red-800', text: 'Rejected' },
             archived: { color: 'bg-gray-100 text-gray-600', text: 'Archived' }
         };
@@ -417,8 +415,8 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
                         {/* // rejected reason if availble */}
                         {post.rejectionReason && (
                             <div className="bg-white rounded-lg border border-gray-200 p-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Rejection Reason</h3>
-                                <p className="text-sm text-gray-700">{post.rejectionReason}</p>
+                                <h3 className="text-lg font-medium text-red-600 mb-4">Rejection Reason</h3>
+                                <p className="text-sm text-red-700">{post.rejectionReason}</p>
                             </div>
                         )}
 
