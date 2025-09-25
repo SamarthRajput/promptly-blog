@@ -13,9 +13,6 @@ import {
     Clock,
     MessageCircle,
     Heart,
-    Globe,
-    Link,
-    Lock,
     Archive,
     CheckCircle,
     XCircle,
@@ -25,7 +22,6 @@ import {
     Copy,
     Share2,
     Download,
-    Upload,
     TrendingUp
 } from 'lucide-react';
 import { toast } from 'sonner';
