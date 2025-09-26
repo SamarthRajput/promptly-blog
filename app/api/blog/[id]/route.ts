@@ -5,15 +5,15 @@ import { eq, and } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 // DELETE method for soft deleting posts
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
     try {
         const clerkUser = await currentUser();
         if (!clerkUser || !clerkUser.id) {
             return NextResponse.json({ error: "Unauthorized, please log in." }, { status: 401 });
         }
-
-        const { searchParams } = new URL(request.url);
-        const postId = searchParams.get('id');
+        const postId = (await params).id;
 
         if (!postId) {
             return NextResponse.json({ error: "Post ID is required." }, { status: 400 });
@@ -57,14 +57,15 @@ export async function DELETE(request: NextRequest) {
     }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
     try {
         const clerkUser = await currentUser();
         if (!clerkUser || !clerkUser.id) {
             return NextResponse.json({ error: "Unauthorized, please log in." }, { status: 401 });
         }
-        const { searchParams } = new URL(request.url);
-        const postId = searchParams.get('id');
+        const postId = (await params).id;
         if (!postId) {
             return NextResponse.json({ error: "Post ID is required." }, { status: 400 });
         }

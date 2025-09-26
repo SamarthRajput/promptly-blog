@@ -8,7 +8,7 @@ import { currentUser } from "@clerk/nextjs/server";
 
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         // Check if user is logged in
@@ -25,7 +25,7 @@ export async function PUT(
         const adminId = existingUser.id;
 
         const { action, reason, scheduledAt } = await req.json();
-        const postId = params.id;
+        const postId = (await params).id;
 
         let updateData: any = {};
         let statusChange: string | null = null;
@@ -34,6 +34,8 @@ export async function PUT(
             case "approve":
                 statusChange = "approved";
                 updateData.status = "approved";
+                updateData.reviewedAt = new Date();
+                updateData.rejectionReason = null;
                 updateData.approvedAt = new Date();
                 break;
 
@@ -55,9 +57,9 @@ export async function PUT(
                 updateData.publishedAt = new Date();
                 break;
 
-            case "archive":
-                statusChange = "archived";
-                updateData.status = "archived";
+            case "delete":
+                statusChange = "deleted";
+                updateData.status = "deleted";
                 break;
 
             default:
@@ -97,9 +99,9 @@ export async function PUT(
 }
 
 export async function GET(req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    console.log("\n\nFetching post for admin with ID:", params.id);
+    console.log("\n\nFetching post for admin with ID:", (await params).id);
     try {
         // Check if user is logged in
         const clerkUser = await currentUser();
@@ -113,7 +115,10 @@ export async function GET(req: Request,
             return NextResponse.json({ error: "Access Denied. Admins only." }, { status: 403 });
         }
 
-        const postId = params.id;
+        const postId = (await params).id;
+        if (!postId) {
+            return NextResponse.json({ error: "Post ID is required." }, { status: 400 });
+        }
         const post = await db.select({
             post: posts,
             author: user,

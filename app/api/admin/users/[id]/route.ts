@@ -6,7 +6,9 @@ import { currentUser } from "@clerk/nextjs/server";
 import { eq, count, desc } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
     try {
         const clerkUser = await currentUser();
         if (!clerkUser || !clerkUser.id) {
@@ -17,8 +19,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Access Denied. Admins only." }, { status: 403 });
         }
         // get id
-        const { searchParams } = request.nextUrl;
-        const userId = searchParams.get("id");
+        const userId = await (await params).id;
         if (!userId) {
             return NextResponse.json({ error: "User ID is required." }, { status: 400 });
         }
@@ -69,18 +70,14 @@ export async function GET(request: NextRequest) {
     }
 }
 
-interface Params {
-    params: { id: string };
-}
 // Update User role (admin/user)
 export async function PUT(
     request: NextRequest,
-    paramsPromise: Promise<Params>
+    { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
     try {
         // paramsPromise is awaited before accessing its properties
-        const params = await paramsPromise;
-        const userId = params.params.id;
+        const userId = (await params).id;
         const clerkUser = await currentUser();
         if (!clerkUser || !clerkUser.id) {
             return NextResponse.json({ error: "Unauthorized, please log in." }, { status: 401 });
