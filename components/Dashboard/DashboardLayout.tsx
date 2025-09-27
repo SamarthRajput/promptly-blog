@@ -384,7 +384,7 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, currentPageDesc
                         className="flex items-center space-x-3 p-2 hover:bg-slate-100 rounded-xl transition-colors"
                     >
                         <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-full flex items-center justify-center">
-                                {loggedInUser.imageUrl ? (
+                            {loggedInUser.imageUrl ? (
                                 <img
                                     src={loggedInUser.imageUrl}
                                     alt={loggedInUser.name}
@@ -478,7 +478,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
     // Get current page title based on pathname
     const getCurrentPageTitle = () => {
-        const currentItem = isAdminRoute ? navItems.find(item => {
+        const currentItem = isAdminRoute ? adminNavItems.find(item => {
             if (item.exact) {
                 return pathname === item.href;
             }
@@ -487,7 +487,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         return currentItem?.title || 'Dashboard';
     };
     const getCurrentPageDescription = () => {
-        const currentItem = isAdminRoute ? navItems.find(item => {
+        const currentItem = isAdminRoute ? adminNavItems.find(item => {
             if (item.exact) {
                 return pathname === item.href;
             }

@@ -1,8 +1,7 @@
 "use client"
-import { Loader2, Search, XCircle } from 'lucide-react';
+import { Copy, Download, Loader2, Search, XCircle } from 'lucide-react';
 import React from 'react'
 import { toast } from 'sonner';
-
 interface MediaItem {
   id: string;
   url: string;
@@ -164,6 +163,34 @@ const MediaPage = () => {
     setDeleting(false);
   }, [selectedMedia]);
 
+  // Download image handler
+  const downloadImage = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename || 'image';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+
+      toast.success('Image downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download image');
+    }
+  };
+
+  // Copy URL handler
+  const copyImageUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success('Image URL copied to clipboard');
+  };
+
+
   // Memoized filtered items
   const filteredItems = React.useMemo(() => {
     if (!mediaList?.items) return [];
@@ -210,7 +237,6 @@ const MediaPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Media Library</h1>
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar: Media List */}
         <aside className="md:w-1/3 w-full bg-white rounded-lg shadow p-4 flex flex-col max-h-[80vh] sticky top-6">
@@ -365,7 +391,8 @@ const MediaPage = () => {
                       maxLength={60}
                     />
                   </div>
-                  <div className="flex gap-2 mt-4">
+
+                  <div className="flex flex-wrap gap-2 mt-4">
                     <button
                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
                       onClick={handleUpdate}
@@ -381,6 +408,22 @@ const MediaPage = () => {
                     >
                       {deleting && <Loader2 className="animate-spin w-4 h-4 mr-2" />}
                       Delete
+                    </button>
+                    <button
+                      className="flex-1 min-w-[120px] px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center justify-center cursor-pointer"
+                      title="Download image"
+                      onClick={() => downloadImage(mediaDetails.data.url, mediaDetails.data.altText || 'image file')}
+                    >
+                      <Download className='mr-2' />
+                      Download
+                    </button>
+                    <button
+                      className="flex-1 min-w-[120px] px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50 flex items-center justify-center cursor-pointer"
+                      title="Copy image URL"
+                      onClick={() => copyImageUrl(mediaDetails.data.url)}
+                    >
+                      <Copy className='mr-2' />
+                      Copy URL
                     </button>
                   </div>
                 </div>
