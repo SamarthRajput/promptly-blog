@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import {
     ArrowLeft,
     Calendar,
@@ -17,7 +18,9 @@ import {
     Edit,
     Users,
     History,
-    X
+    X,
+    Sparkles, 
+    Brain
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -147,6 +150,10 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
     const [scheduledDate, setScheduledDate] = useState('');
     const [scheduledTime, setScheduledTime] = useState('');
 
+    const [analysisLoading, setAnalysisLoading] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+    const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+
     const { id: postId } = React.use(params);
 
     // Fetch post data
@@ -218,6 +225,48 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
             setActionReason('');
             setScheduledDate('');
             setScheduledTime('');
+        }
+    };
+
+    const handleAnalyzePost = async () => {
+        if (!data) return;
+
+        setAnalysisLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`/api/admin/posts/${postId}/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: post.title,
+                content: post.contentMd,
+                excerpt: post.excerpt
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to analyze post');
+        }
+
+        const result = await response.json();
+        setAnalysisResult(result.data.analysis);
+        setShowAnalysisModal(true);
+        
+        toast.success('Post analysis completed!', {
+            description: 'AI analysis has been generated successfully.'
+        });
+
+        } 
+        catch (err: any) {
+            toast.error(err.message, {
+                description: 'Could not analyze post. Please try again.',
+            });
+            setError(err.message);
+        } 
+        finally {
+            setAnalysisLoading(false);
         }
     };
 
@@ -381,6 +430,46 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
 
                     {/* Sidebar */}
                     <div className="space-y-6">
+                    {/* AI Analysis Section - NEW SECTION */}
+                        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                            <Brain className="w-5 h-5 mr-2 text-purple-600" />
+                            AI Analysis
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Get AI-powered insights on content quality, SEO optimization, and readability.
+                        </p>
+                        
+                        <button
+                            onClick={handleAnalyzePost}
+                            disabled={analysisLoading}
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            {analysisLoading ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>Analyzing Content...</span>
+                            </>
+                            ) : (
+                            <>
+                                <Sparkles className="w-4 h-4" />
+                                <span>Analyze Draft</span>
+                            </>
+                            )}
+                        </button>
+                        
+                        {analysisResult && (
+                            <div className="mt-3 p-3 bg-white rounded-md border border-purple-200">
+                            <p className="text-xs text-purple-700 font-medium mb-1">✨ Analysis Complete</p>
+                            <button
+                                onClick={() => setShowAnalysisModal(true)}
+                                className="text-xs text-purple-600 hover:text-purple-800 underline"
+                            >
+                                View Full Analysis Results
+                            </button>
+                            </div>
+                        )}
+                        </div>
                         {/* Action Buttons */}
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Actions</h3>
@@ -676,6 +765,83 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
                             </div>
                         </div>
                     </div>
+                )}
+                {/* Analysis Modal  */}
+                {showAnalysisModal && analysisResult && (
+                <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl max-w-4xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-gray-200/50">
+                    {/* Header with gradient */}
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200/60 p-6">
+                        <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg">
+                            <Brain className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                            <h3 className="text-xl font-semibold text-gray-900">AI Analysis Results</h3>
+                            <p className="text-sm text-gray-600 mt-0.5">Powered by Gemini AI</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setShowAnalysisModal(false)}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        </div>
+                    </div>
+                    
+                    {/* Content with better typography */}
+                    <div className="p-6 overflow-y-auto max-h-[60vh]">
+                        <div className="prose prose-gray max-w-none prose-headings:text-gray-900 prose-strong:text-gray-900 prose-p:text-gray-700 markdown-content">
+                        <ReactMarkdown
+                            components={{
+                                h1: ({children}) => <h1 className="text-2xl font-bold text-gray-900 mb-4 mt-6">{children}</h1>,
+                                h2: ({children}) => <h2 className="text-xl font-semibold text-gray-900 mb-3 mt-5">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-lg font-medium text-gray-900 mb-2 mt-4">{children}</h3>,
+                                strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                                p: ({children}) => <p className="text-gray-700 mb-3 leading-relaxed">{children}</p>,
+                                ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
+                                li: ({children}) => <li className="text-gray-700">{children}</li>,
+                                code: ({children}) => <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800">{children}</code>,
+                            }}
+                            >
+                            {analysisResult}
+                        </ReactMarkdown>
+                        </div>
+                    </div>
+                    
+                    {/* Footer with better button styling */}
+                    <div className="bg-gray-50/50 border-t border-gray-200/60 px-6 py-4">
+                        <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Analysis generated on {new Date().toLocaleString()}</span>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                            onClick={() => setShowAnalysisModal(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm"
+                            >
+                            Close
+                            </button>
+                            <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(analysisResult);
+                                toast.success('Analysis copied to clipboard!');
+                            }}
+                            className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg transition-all duration-200 shadow-sm transform hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
+                            >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Copy Analysis
+                            </button>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
                 )}
             </div>
         </div>
