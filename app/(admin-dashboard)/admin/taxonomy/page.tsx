@@ -17,7 +17,8 @@ import {
   AlertTriangle,
   TrendingUp,
   Archive,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -63,6 +64,7 @@ const TaxonomyAdminPage = () => {
   const [editingItem, setEditingItem] = useState<{ type: 'category' | 'tag', id: string, name: string, slug?: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'tag', id: string, name: string, postsCount: number } | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [addingItems, setAddingItems] = useState(false);
 
   // Form states
   const [newItemName, setNewItemName] = useState('');
@@ -104,6 +106,7 @@ const TaxonomyAdminPage = () => {
   // Handle creating new item
   const handleCreate = async () => {
     if (!newItemName.trim()) return;
+    setAddingItems(true);
 
     try {
       const payload = {
@@ -122,13 +125,20 @@ const TaxonomyAdminPage = () => {
         throw new Error('Failed to create item');
       }
 
-      await fetchTaxonomy();
+      const data = await response.json();
+      if (activeTab === 'categories' && data.category) {
+        setCategories((prev) => [...prev, data.category]);
+      } else if (activeTab === 'tags' && data.tag) {
+        setTags((prev) => [...prev, data.tag]);
+      }
       setShowAddForm(false);
       setNewItemName('');
       setNewItemSlug('');
       toast.success(`${activeTab === 'categories' ? 'Category' : 'Tag'} created successfully`);
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setAddingItems(false);
     }
   };
 
@@ -164,7 +174,6 @@ const TaxonomyAdminPage = () => {
             const data = await res.json();
             setCategories((prev) => item.type === "category" && data.category ? [...prev, data.category] : prev);
             setTags((prev) => item.type === "tag" && data.tag ? [...prev, data.tag] : prev);
-            toast.info('Added');
           } catch (err) {
             console.error("Taxonomy insert error:", err);
           }
@@ -531,12 +540,22 @@ const TaxonomyAdminPage = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleCreate}
-                    disabled={!newItemName.trim()}
+                    disabled={!newItemName.trim() || addingItems}
                     className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <Save className="w-4 h-4" />
-                    Create
+                    {addingItems ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Creating
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Create
+                      </>
+                    )}
                   </button>
+
                   <button
                     onClick={() => {
                       setShowAddForm(false);
@@ -709,7 +728,7 @@ const TaxonomyAdminPage = () => {
 
         {/* Delete Confirmation Modal */}
         {deleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <div className="flex items-center mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-600 mr-2" />

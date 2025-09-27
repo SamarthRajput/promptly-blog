@@ -80,12 +80,7 @@ export async function POST(req: Request) {
         if (!existingUser || existingUser.siteRole !== "admin") {
             return NextResponse.json({ error: "Access Denied. Admins only." }, { status: 403 });
         }
-
-        // delete all existing categories and tags
-        await db.delete(categories);
-        await db.delete(tags);
-        console.log("Deleted all existing categories and tags");
-
+        
         const body: BodyType = await req.json();
 
         if (!body.type || !body.name) {
