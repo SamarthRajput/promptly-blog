@@ -176,29 +176,50 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
     };
 
     const generateAITitle = async () => {
-        if (!formData.contentMd.trim()) {
-            toast.error('Please add some content first to generate a title');
+        if (!formData.contentMd.trim() && !formData.title.trim()) {
+            toast.error('Please add some content or enter a title first');
             return;
         }
+        
         setIsGeneratingTitle(true);
+        
         try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const mockTitles = [
-                "The Ultimate Guide to Modern Web Development",
-                "10 Essential Tips for Better Code Quality",
-                "Understanding the Future of Technology",
-                "Building Scalable Applications with React",
-                "The Art of Clean Architecture"
-            ];
-            const generatedTitle = mockTitles[Math.floor(Math.random() * mockTitles.length)];
-            setFormData(prev => ({ ...prev, title: generatedTitle }));
-            toast.success('Title generated successfully!');
+            const response = await fetch('/api/ai/generate-title', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    content: formData.contentMd,
+                    currentTitle: formData.title 
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate title');
+            }
+
+            const data = await response.json();
+            setFormData(prev => ({ ...prev, title: data.title }));
+            
+            // Show different success messages based on what was provided
+            if (formData.title.trim() && formData.contentMd.trim()) {
+                toast.success('Title improved based on your content!');
+            } else if (formData.title.trim()) {
+                toast.success('Title enhanced successfully!');
+            } else {
+                toast.success('Title generated from content!');
+            }
+            
         } catch (error) {
+            console.error('Error generating title:', error);
             toast.error('Failed to generate title. Please try again.');
         } finally {
             setIsGeneratingTitle(false);
         }
     };
+
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
@@ -318,7 +339,14 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                                 </div>
                                 <p className="text-sm text-slate-500 flex items-center space-x-1">
                                     <Wand2 className="w-4 h-4" />
-                                    <span>Let AI create an engaging title based on your content</span>
+                                    <span>
+                                        {formData.title.trim() && formData.contentMd.trim() 
+                                            ? "Improve your title based on content" 
+                                            : formData.title.trim() 
+                                                ? "Enhance your existing title" 
+                                                : "Generate title from your content"
+                                        }
+                                    </span>
                                 </p>
                             </div>
                         </FormField>
