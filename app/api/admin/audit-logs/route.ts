@@ -1,4 +1,4 @@
-import { db } from "@/lib/db"; // your Drizzle db instance
+import { db } from "@/lib/db";
 import {
     auditLogs,
     user,
@@ -9,10 +9,18 @@ import {
 import { getCurrentUser } from "@/actions/syncUser";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm/sql/expressions/conditions";
+import { eq, and, gte, lte, desc, count } from "drizzle-orm";
 
-async function getAuditLogs({ page = 1, pageSize = 20, filters = {} }) {
+async function getAuditLogs({ page = 1, pageSize = 20, filters = {} }: { page?: number; pageSize?: number; filters?: any }) {
     const offset = (page - 1) * pageSize;
+
+    // Build filter conditions
+    const conditions = [];
+    if (filters.actorId) conditions.push(eq(auditLogs.actorUserId, filters.actorId));
+    if (filters.targetType) conditions.push(eq(auditLogs.targetType, filters.targetType));
+    if (filters.action) conditions.push(eq(auditLogs.action, filters.action));
+    if (filters.startDate) conditions.push(gte(auditLogs.createdAt, filters.startDate));
+    if (filters.endDate) conditions.push(lte(auditLogs.createdAt, filters.endDate));
 
     // Base query: join actor user
     const logs = await db
@@ -40,21 +48,23 @@ async function getAuditLogs({ page = 1, pageSize = 20, filters = {} }) {
         })
         .from(auditLogs)
         .leftJoin(user, eq(auditLogs.actorUserId, user.id))
-        .leftJoin(posts, eq(posts.id, auditLogs.targetId).and(eq(auditLogs.targetType, "post")))
-        .leftJoin(comments, eq(comments.id, auditLogs.targetId).and(eq(auditLogs.targetType, "comment")))
+        .leftJoin(posts, and(
+            eq(posts.id, auditLogs.targetId),
+            eq(auditLogs.targetType, "post")
+        ))
+        .leftJoin(comments, and(
+            eq(comments.id, auditLogs.targetId),
+            eq(auditLogs.targetType, "comment")
+        ))
         .leftJoin(
             collaborationInvites,
-            eq(collaborationInvites.id, auditLogs.targetId) and(eq(auditLogs.targetType, "invitation")))
+            and(
+                eq(collaborationInvites.id, auditLogs.targetId),
+                eq(auditLogs.targetType, "invitation")
+            )
         )
-        .where((clause) => {
-            // Apply filters dynamically
-            if (filters.actorId) clause.and(eq(auditLogs.actorUserId, filters.actorId));
-            if (filters.targetType) clause.and(eq(auditLogs.targetType,(filters.targetType));
-            if (filters.action) clause.and(auditLogs.action.eq(filters.action));
-            if (filters.startDate) clause.and(auditLogs.createdAt.gte(filters.startDate));
-            if (filters.endDate) clause.and(auditLogs.createdAt.lte(filters.endDate));
-        })
-        .orderBy(auditLogs.createdAt.desc())
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(auditLogs.createdAt))
         .limit(pageSize)
         .offset(offset);
 
@@ -95,21 +105,21 @@ async function getAuditLogs({ page = 1, pageSize = 20, filters = {} }) {
     });
 
     // Optional: fetch total count for pagination
-    const total = await db.count(auditLogs.id).where((clause) => {
-        if (filters.actorId) clause.and(auditLogs.actorUserId.eq(filters.actorId));
-        if (filters.targetType) clause.and(auditLogs.targetType.eq(filters.targetType));
-        if (filters.action) clause.and(auditLogs.action.eq(filters.action));
-        if (filters.startDate) clause.and(auditLogs.createdAt.gte(filters.startDate));
-        if (filters.endDate) clause.and(auditLogs.createdAt.lte(filters.endDate));
-    });
+    const total = await db
+        .select({ count: count(auditLogs.id) })
+        .from(auditLogs)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .then(rows => rows[0]?.count ?? 0);
 
     return {
         data: formattedLogs,
-        meta: {
+        pagination: {
             page,
             pageSize,
             total: Number(total),
             totalPages: Math.ceil(Number(total) / pageSize),
+            hasNext: offset + formattedLogs.length < Number(total),
+            hasPrevious: page > 1
         },
     };
 }
