@@ -186,8 +186,6 @@ export async function GET(request: Request) {
         if (startDate) filters.startDate = startDate;
         if (endDate) filters.endDate = endDate;
 
-        // await seed(); // comment out this line in production
-
         const auditLogs = await getAuditLogs({ page, pageSize, filters });
         return NextResponse.json({ data: auditLogs });
     } catch (error) {
@@ -197,72 +195,4 @@ export async function GET(request: Request) {
             { status: 500 }
         );
     }
-}
-
-async function seed() {
-    // Create or fetch an admin user
-    let [admin] = await db.select().from(user).where(eq(user.email, "rohitkuyada@gmail.com"));
-
-    // Create or fetch a normal user
-    let [normalUser] = await db.select().from(user).where(eq(user.email, "john@example.com"));
-
-    // Find a post
-    const [post] = await db.select().from(posts).limit(1);
-
-    // Find the first comment
-    const [comment] = await db.select().from(comments).limit(1);
-
-    // Create a collaboration invite
-    const [invite] = await db.insert(collaborationInvites).values({
-        postId: post.id,
-        inviterId: admin.id,
-        inviteeEmail: "rohitkuyada@gmail.com",
-        token: crypto.randomUUID(), // required property
-    }).returning();
-
-    // Insert dummy audit logs
-    const auditLogEntries = [
-        {
-            id: crypto.randomUUID(),
-            actorUserId: admin.id,
-            targetId: post.id,
-            targetType: "post" as "post",
-            action: "create", // valid
-            metadata: { note: "Admin created a post" },
-            createdAt: new Date(),
-        },
-        {
-            id: crypto.randomUUID(),
-            actorUserId: normalUser.id,
-            targetId: comment.id,
-            targetType: "comment" as "comment",
-            action: "create", // valid
-            metadata: { note: "User commented on a post" },
-            createdAt: new Date(),
-        },
-        {
-            id: crypto.randomUUID(),
-            actorUserId: admin.id,
-            targetId: invite.id,
-            targetType: "invitation" as "invitation",
-            action: "invite", // valid
-            metadata: { note: "Admin invited someone" },
-            createdAt: new Date(),
-        },
-        {
-            id: crypto.randomUUID(),
-            actorUserId: normalUser.id,
-            targetId: admin.id,
-            targetType: "user" as "user",
-            action: "login", // changed from "follow" to a valid action
-            metadata: { note: "User logged in as admin" },
-            createdAt: new Date(),
-        },
-    ];
-
-    for (const entry of auditLogEntries) {
-        await db.insert(auditLogs).values(entry as any); // cast if needed, or ensure types match
-    }
-
-    console.log("\n\n✅ Dummy audit logs inserted!");
 }
