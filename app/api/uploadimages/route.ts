@@ -6,6 +6,7 @@ import cloudinary from "@/lib/cloudinary";
 import { Readable } from "stream";
 import type { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 import { syncUser } from "@/actions/syncUser";
+import { logAudit } from "@/actions/logAudit";
 
 export async function POST(request: Request) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     if (!file) {
       return NextResponse.json({ error: "Image file is required." }, { status: 400 });
     }
-    const filename = file.name; 
+    const filename = file.name;
     // Upload to Cloudinary
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -60,6 +61,10 @@ export async function POST(request: Request) {
       type: "image",
       provider: provider || "cloudinary",
     }).returning();
+    logAudit(dbUser.id, 'media', newMedia.id, 'create', {
+      success: true,
+      message: `Image uploaded with ID ${newMedia.id} by user ${dbUser.id}`
+    });
 
     return NextResponse.json({ message: "Media saved.", media: newMedia }, { status: 201 });
   } catch (error) {
@@ -178,6 +183,10 @@ export async function DELETE(request: Request) {
       }
     }
 
+    logAudit(dbUser.id, 'media', dbMedia.id, 'delete', {
+      success: true,
+      message: `Image with ID ${id} deleted by user ${dbUser.id}`
+    });
     return NextResponse.json({ message: "Image deleted." }, { status: 200 });
   } catch (error) {
     console.error(error);

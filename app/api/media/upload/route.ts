@@ -4,6 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { isValidUrl } from "@/utils/helper-blog";
+import { logAudit } from "@/actions/logAudit";
 
 export async function POST(request: NextRequest) {
     try {
@@ -43,6 +44,10 @@ export async function POST(request: NextRequest) {
             type: "image",
             provider,
         }).returning();
+        logAudit(dbUser.id, 'media', newMedia.id, 'create', {
+            success: true,
+            message: `Image uploaded with ID ${newMedia.id} by user ${dbUser.id}`
+        });
 
         return NextResponse.json({ message: "Image uploaded successfully.", media: newMedia }, { status: 201 });
     } catch (error) {

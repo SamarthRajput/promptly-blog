@@ -2,7 +2,7 @@ import { categories, comments, commentReactions, media, postCategories, postReac
 import { db } from "@/lib/db";
 import { CategoryType } from "@/types/blog";
 import { currentUser } from "@clerk/nextjs/server";
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, or } from "drizzle-orm";
 import { serializeDocument } from "./date-formatter";
 import { isValidUUID } from "./isValid";
 
@@ -78,7 +78,7 @@ export const fetchPostWithCategories = async (
         .leftJoin(media, eq(posts.coverImageId, media.id))
         .where(and(
             eq(posts.id, postId),
-            isOwner ? eq(posts.authorId, userId) : and(
+            isOwner ? eq(posts.authorId, userId) : or(
                 eq(posts.status, 'approved'),
                 eq(posts.status, 'rejected'),
                 eq(posts.status, "under_review")
@@ -86,7 +86,7 @@ export const fetchPostWithCategories = async (
         ))
         .limit(1)
         .execute();
-
+    console.log(postResult);
     if (postResult.length === 0) throw new Error("Post not found or not yours.");
     const post = postResult[0];
 

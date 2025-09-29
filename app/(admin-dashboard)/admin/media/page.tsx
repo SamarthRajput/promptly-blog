@@ -236,10 +236,14 @@ const MediaPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="flex flex-col md:flex-row gap-6">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-8">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
         {/* Sidebar: Media List */}
-        <aside className="md:w-1/3 w-full bg-white rounded-lg shadow p-4 flex flex-col max-h-[80vh] sticky top-6">
+        <aside
+          className="md:w-1/3 w-full bg-white rounded-lg shadow p-3 sm:p-4 flex flex-col max-h-[80vh] md:sticky md:top-6
+          overflow-x-auto md:overflow-x-visible"
+          style={{ minWidth: 0 }}
+        >
           <div className="mb-4 flex gap-2 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 text-gray-400 w-4 h-4" />
@@ -286,7 +290,7 @@ const MediaPage = () => {
               <p>No media found.</p>
             </div>
           ) : (
-            <ul className="overflow-y-auto flex-1 pr-1">
+            <ul className="overflow-y-auto flex-1 pr-1 custom-scrollbar max-h-[50vh] md:max-h-none">
               {filteredItems.map(media => (
                 <li
                   key={media.id}
@@ -355,20 +359,25 @@ const MediaPage = () => {
           </div>
         </aside>
         {/* Details Panel */}
-        <section className="md:w-2/3 w-full bg-white rounded-lg shadow p-6 min-h-[400px]">
+        <section
+          className="md:w-2/3 w-full bg-white rounded-lg shadow p-3 sm:p-6 min-h-[400px] overflow-x-auto"
+          style={{ minWidth: 0 }}
+        >
           <h2 className="text-xl font-semibold mb-4">Media Details</h2>
           {loadingDetails ? (
             <DetailsSkeleton />
           ) : mediaDetails ? (
             <div>
-              <div className="flex flex-col md:flex-row gap-6 mb-4">
-                <img
-                  src={mediaDetails.data.url}
-                  alt={mediaDetails.data.altText || 'Media'}
-                  className="w-full md:w-48 h-48 object-contain rounded border bg-gray-50"
-                  loading="lazy"
-                />
-                <div className="flex-1">
+              <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-4">
+                <div className="flex-shrink-0 flex justify-center items-center w-full md:w-auto">
+                  <img
+                    src={mediaDetails.data.url}
+                    alt={mediaDetails.data.altText || 'Media'}
+                    className="w-full max-w-xs md:w-48 h-48 object-contain rounded border bg-gray-50"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
                   <div className="mb-2">
                     <label className="block text-sm font-medium text-gray-700">Alt Text</label>
                     <input
@@ -391,10 +400,9 @@ const MediaPage = () => {
                       maxLength={60}
                     />
                   </div>
-
-                  <div className="flex flex-wrap gap-2 mt-4">
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-2 mt-4">
                     <button
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
                       onClick={handleUpdate}
                       disabled={updating}
                     >
@@ -402,7 +410,7 @@ const MediaPage = () => {
                       Update
                     </button>
                     <button
-                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center"
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
                       onClick={handleDelete}
                       disabled={deleting}
                     >
@@ -484,7 +492,7 @@ const MediaPage = () => {
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 py-16">
               <span className="text-5xl mb-2">🖼️</span>
-              <p>Select a media item to see details</p>
+              <p className="text-center">Select a media item to see details</p>
             </div>
           )}
           {error && (

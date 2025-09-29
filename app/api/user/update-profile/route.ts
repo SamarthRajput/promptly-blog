@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { user } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { logAudit } from '@/actions/logAudit';
 
 
 const updateProfileSchema = z.object({
@@ -14,7 +15,7 @@ const updateProfileSchema = z.object({
 export async function PUT(request: Request) {
   try {
     const clerkUser = await syncUser();
-    
+
     if (!clerkUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -35,19 +36,22 @@ export async function PUT(request: Request) {
     if (updatedUser.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
+    logAudit(clerkUser.id, 'user', updatedUser[0].id, 'update', {
+      success: true,
+      message: `User profile updated for user ${clerkUser.id}`
+    });
     return NextResponse.json(updatedUser[0]);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.issues }, 
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }
 
     console.error('Error updating user profile:', error);
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

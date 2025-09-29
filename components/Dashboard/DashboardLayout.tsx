@@ -23,11 +23,14 @@ import {
     Users,
     MessageSquareWarning,
     FileText,
-    Tags
+    Tags,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useUser } from '@clerk/nextjs';
+import { useClerk } from '@clerk/nextjs'
 
 // Navigation items configuration
 const navItems = [
@@ -115,8 +118,8 @@ const adminNavItems = [
         icon: ImageIcon
     },
     {
-        title: 'Comments & Reports',
-        description: 'Moderate comments and handle flagged content.',
+        title: 'User Queries',
+        description: 'Manage and respond to user-submitted queries and feedback.',
         href: '/admin/comments',
         icon: MessageSquareWarning
     },
@@ -168,6 +171,7 @@ interface TopNavbarProps {
     currentPageTitle: string;
     currentPageDescription: string;
     onMobileMenuToggle: () => void;
+    onLogout: () => void;
 }
 
 // Sidebar Component
@@ -185,27 +189,38 @@ const Sidebar: React.FC<SidebarProps> = ({ loggedInUser, isAdminRoute, isCollaps
     const sidebarContent = (
         <>
             {/* Logo and Brand */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                <div className="flex items-center space-x-3 select-none cursor-pointer"
+            <div className={cn(
+                "flex items-center justify-between p-4 border-b border-slate-200",
+                isCollapsed && !isMobile && "justify-center"
+            )}>
+                <div
+                    className={cn(
+                        // Always row, single line for responsiveness
+                        "flex flex-row items-center space-x-3 select-none cursor-pointer justify-center w-full"
+                    )}
                     onClick={() => {
                         router.push("/");
                     }}
-                    title='Go to Home Page'>
-                    <div className="flex items-center justify-center w-10 h-10 bg-sky-500 rounded-xl shadow-lg cursor-pointer select-none"                                           >
-                        <PenTool className="w-6 h-6 text-white" />
-                    </div>
-                    {(!isCollapsed || isMobile) && (
-                        <div>
+                    title='Go to Home Page'
+                >{(!isCollapsed || isMobile) && (
+                    <div className="flex flex-row items-center space-x-3 w-full">
+                        <div className="flex items-center justify-center w-10 h-10 bg-sky-500 rounded-xl shadow-lg cursor-pointer select-none">
+                            <PenTool className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="text-left">
                             <h1 className="text-xl font-bold text-slate-800">Promptly Blog</h1>
                             <p className="text-xs text-slate-500">{isAdminRoute ? 'Admin' : 'User'} Dashboard</p>
                         </div>
-                    )}
+                    </div>
+                )}
                 </div>
-
                 {/* Toggle button for desktop, close button for mobile */}
                 <button
                     onClick={isMobile ? onClose : onToggle}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    className={cn(
+                        "p-2 hover:bg-slate-100 rounded-lg transition-colors",
+                        isCollapsed && !isMobile && "mx-auto"
+                    )}
                 >
                     {isMobile ? (
                         <X className="w-5 h-5 text-slate-600" />
@@ -215,78 +230,62 @@ const Sidebar: React.FC<SidebarProps> = ({ loggedInUser, isAdminRoute, isCollaps
                 </button>
             </div>
             {/* Navigation Items */}
-            <nav className="flex-1 p-4 space-y-2 scroll-auto hide-scrollbar overflow-y-auto">
-                {isAdminRoute
-                    ? adminNavItems.map((item) => {
-                        const Icon = item.icon;
-                        const active = isActive(item);
-
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={isMobile ? onClose : undefined}
+            <nav
+                className={cn(
+                    "flex-1 p-4 space-y-2 overflow-y-auto",
+                    "hide-scrollbar",
+                    isCollapsed && !isMobile && "px-2"
+                )}
+                style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none"
+                }}
+            >
+                {(isAdminRoute ? adminNavItems : navItems).map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item);
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={isMobile ? onClose : undefined}
+                            className={cn(
+                                "flex items-center px-4 py-3 rounded-xl transition-all duration-200 group relative",
+                                active
+                                    ? "bg-sky-100 text-sky-700 shadow-sm"
+                                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-800",
+                                isCollapsed && !isMobile && "justify-center px-0"
+                            )}
+                            title={isCollapsed && !isMobile ? item.title : undefined}
+                            prefetch={true}
+                        >
+                            <Icon
                                 className={cn(
-                                    "flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                                    "w-5 h-5 transition-colors",
                                     active
-                                        ? "bg-sky-100 text-sky-700 shadow-sm"
-                                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                                        ? "text-sky-600"
+                                        : "text-slate-500 group-hover:text-slate-700"
                                 )}
-                            >
-                                <Icon
-                                    className={cn(
-                                        "w-5 h-5 transition-colors",
-                                        active
-                                            ? "text-sky-600"
-                                            : "text-slate-500 group-hover:text-slate-700"
-                                    )}
-                                />
-                                {(!isCollapsed || isMobile) && (
-                                    <span className="font-medium">{item.title}</span>
+                            />
+                            {
+                                typeof window !== "undefined" && (!isCollapsed || isMobile) && (
+                                    <span className="font-medium ml-3">{item.title}</span>
                                 )}
-                                {active && (
-                                    <div className="ml-auto w-2 h-2 bg-sky-500 rounded-full" />
-                                )}
-                            </Link>
-                        );
-                    })
-                    : navItems.map((item) => {
-                        const Icon = item.icon;
-                        const active = isActive(item);
-
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={isMobile ? onClose : undefined}
-                                className={cn(
-                                    "flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-                                    active
-                                        ? "bg-sky-100 text-sky-700 shadow-sm"
-                                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-800"
-                                )}
-                            >
-                                <Icon
-                                    className={cn(
-                                        "w-5 h-5 transition-colors",
-                                        active
-                                            ? "text-sky-600"
-                                            : "text-slate-500 group-hover:text-slate-700"
-                                    )}
-                                />
-                                {(!isCollapsed || isMobile) && (
-                                    <span className="font-medium">{item.title}</span>
-                                )}
-                                {active && (
-                                    <div className="ml-auto w-2 h-2 bg-sky-500 rounded-full" />
-                                )}
-                            </Link>
-                        );
-                    })}
+                            {active && (!isCollapsed || isMobile) && (
+                                <div className={cn(
+                                    "ml-auto w-2 h-2 bg-sky-500 rounded-full",
+                                    !isCollapsed && !isMobile && "absolute right-3"
+                                )} />
+                            )}
+                        </Link>
+                    );
+                })}
             </nav>
-
             {/* User Profile Section */}
-            <div className="p-4 border-t border-slate-200">
+            <div className={cn(
+                "p-4 border-t border-slate-200",
+                isCollapsed && !isMobile && "flex justify-center p-2"
+            )}>
                 {(!isCollapsed || isMobile) ? (
                     <div className="flex items-center space-x-3 p-3 bg-slate-50 rounded-xl">
                         <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-full flex items-center justify-center">
@@ -324,21 +323,39 @@ const Sidebar: React.FC<SidebarProps> = ({ loggedInUser, isAdminRoute, isCollaps
         </>
     );
 
+    // Add a collapse/expand button for desktop
+    // const CollapseButton = () => (
+    //     <button
+    //         onClick={onToggle}
+    //         className={cn(
+    //             "absolute z-400 hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white border border-slate-200 shadow transition-all hover:bg-slate-100",
+    //             isCollapsed ? "left-12" : "left-55"
+    //         )}
+    //         style={{
+    //             top: 80 // below logo
+    //         }}
+    //         aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+    //         tabIndex={0}
+    //     >
+    //         {isCollapsed ? <ChevronRight className="w-5 h-5 text-slate-600" /> : <ChevronLeft className="w-5 h-5 text-slate-600" />}
+    //     </button>
+    // );
+
     if (isMobile) {
         return (
             <>
                 {isOpen && (
                     <div
-                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                        className="fixed inset-0 bg-black/50 z-40 block sm:hidden"
                         onClick={onClose}
                     />
                 )}
 
                 <aside className={cn(
-                    "fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden",
+                    "fixed left-0 top-0 h-full w-4/5 max-w-xs bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out block sm:hidden",
                     isOpen ? "translate-x-0" : "-translate-x-full"
                 )}>
-                    <div className="flex flex-col h-full">
+                    <div className="flex flex-col h-full overflow-y-auto hide-scrollbar">
                         {sidebarContent}
                     </div>
                 </aside>
@@ -348,58 +365,71 @@ const Sidebar: React.FC<SidebarProps> = ({ loggedInUser, isAdminRoute, isCollaps
 
     return (
         <aside className={cn(
-            "fixed left-0 top-0 h-full bg-white shadow-lg z-30 transition-all duration-300 ease-in-out hidden lg:block",
-            isCollapsed ? "w-20" : "w-80"
+            "fixed left-0 top-0 h-full bg-white shadow-lg z-30 transition-all duration-300 ease-in-out hidden md:block",
+            isCollapsed
+                ? "w-14 md:w-16"
+                : "w-56 md:w-64",
+            "overflow-y-hidden"
         )}>
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full relative">
                 {sidebarContent}
+                {/* Desktop collapse/expand button */}
+                {/* <CollapseButton /> */}
             </div>
+            <style jsx global>{`
+                .hide-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .hide-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+            `}</style>
         </aside>
     );
 };
 
-const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, currentPageDescription, onMobileMenuToggle, loggedInUser }) => {
+const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, currentPageDescription, onMobileMenuToggle, loggedInUser, onLogout }) => {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
     return (
         <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 shadow-sm sticky top-0 z-20">
-            <div className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center space-x-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-3 sm:py-4">
+                <div className="flex items-center space-x-3">
                     <button
                         onClick={onMobileMenuToggle}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors lg:hidden"
+                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors block lg:hidden"
                     >
                         <Menu className="w-6 h-6 text-slate-600" />
                     </button>
-
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-800">{currentPageTitle}</h2>
-                        <p className="text-sm text-slate-500">{currentPageDescription}</p>
+                    <div className="min-w-0">
+                        <h2 className="text-lg sm:text-2xl font-bold text-slate-800 truncate">{currentPageTitle}</h2>
+                        <p className="text-xs sm:text-sm text-slate-500 truncate">{currentPageDescription}</p>
                     </div>
                 </div>
 
-                <div className="relative">
+                <div className="relative hidden sm:block">
                     <button
                         onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                        className="flex items-center space-x-3 p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                        className="flex items-center space-x-3 p-2 hover:bg-slate-100 rounded-xl transition-colors group"
                     >
-                        <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-600 rounded-full flex items-center justify-center ring-2 ring-sky-200 group-hover:ring-sky-400 transition">
                             {loggedInUser.imageUrl ? (
                                 <img
                                     src={loggedInUser.imageUrl}
                                     alt={loggedInUser.name}
-                                    className="w-10 h-10 rounded-full"
+                                    className="w-10 h-10 rounded-full object-cover"
                                 />
                             ) : (
                                 <User className="w-5 h-5 text-white" />
                             )}
                         </div>
-                        <div className="hidden sm:block text-left">
-                            <p className="text-sm font-medium text-slate-800">{loggedInUser.name}</p>
+                        <div className="text-left">
+                            <p className="text-sm font-semibold text-slate-800">{loggedInUser.name}</p>
                             <p className="text-xs text-slate-500">User</p>
                         </div>
                         <ChevronDown className={cn(
-                            "w-4 h-4 text-slate-500 transition-transform",
+                            "w-4 h-4 text-slate-500 transition-transform duration-200",
                             isUserDropdownOpen && "rotate-180"
                         )} />
                     </button>
@@ -411,29 +441,39 @@ const TopNavbar: React.FC<TopNavbarProps> = ({ currentPageTitle, currentPageDesc
                                 className="fixed inset-0 z-10"
                                 onClick={() => setIsUserDropdownOpen(false)}
                             />
-                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-20">
-                                <Link
-                                    href="/dashboard/profile"
-                                    className="flex items-center space-x-3 px-4 py-3 text-slate-700 hover:bg-slate-50 transition-colors"
-                                    onClick={() => setIsUserDropdownOpen(false)}
-                                >
-                                    <UserCircle className="w-5 h-5" />
-                                    <span>Profile</span>
-                                </Link>
+                            <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-20 animate-fade-in">
+                                <div className="px-4 py-3 flex items-center space-x-3 border-b border-slate-100">
+                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
+                                        {loggedInUser.imageUrl ? (
+                                            <img
+                                                src={loggedInUser.imageUrl}
+                                                alt={loggedInUser.name}
+                                                className="w-9 h-9 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <User className="w-5 h-5 text-white" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-800 truncate">{loggedInUser.name}</p>
+                                        <p className="text-xs text-slate-500 truncate">{loggedInUser.email}</p>
+                                    </div>
+                                </div>
+
                                 <Link
                                     href="/dashboard/settings"
-                                    className="flex items-center space-x-3 px-4 py-3 text-slate-700 hover:bg-slate-50 transition-colors"
+                                    className="flex items-center space-x-3 px-4 py-3 text-slate-700 hover:bg-sky-50 transition-colors"
                                     onClick={() => setIsUserDropdownOpen(false)}
                                 >
                                     <Settings className="w-5 h-5" />
                                     <span>Settings</span>
                                 </Link>
-                                <hr className="my-2 border-slate-200" />
+                                <hr className="my-2 border-slate-100" />
                                 <button
                                     className="flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
                                     onClick={() => {
-                                        setIsUserDropdownOpen(false);
-                                        toast.success("Logged out successfully!");
+                                        onLogout();
+                                        toast.success("Logged out successfully");
                                     }}
                                 >
                                     <LogOut className="w-5 h-5" />
@@ -460,7 +500,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         email: '',
         imageUrl: '',
     });
-
+    const { signOut } = useClerk();
     useEffect(() => {
         if (user) {
             setLoggedInUser({
@@ -473,7 +513,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
     useEffect(() => {
         setIsAdminRoute(pathname.startsWith('/admin'));
-        // toast.info(`Navigated to ${pathname}\nIsAdminRoute: ${isAdminRoute}`, { duration: 2000 });
     }, [pathname]);
 
     // Get current page title based on pathname
@@ -509,14 +548,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50 to-slate-50">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50 to-slate-50 relative">
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-30 pointer-events-none">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-sky-400/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
+                <div className="absolute top-0 right-0 w-72 h-72 md:w-96 md:h-96 bg-sky-400/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-72 h-72 md:w-96 md:h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
             </div>
 
-            {/* Sidebar */}
+            {/* Sidebar for desktop */}
             <Sidebar
                 loggedInUser={loggedInUser}
                 isAdminRoute={isAdminRoute}
@@ -527,7 +566,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 onClose={closeMobileSidebar}
             />
 
-            {/* Mobile Sidebar */}
+            {/* Sidebar for mobile */}
             <Sidebar
                 loggedInUser={loggedInUser}
                 isAdminRoute={isAdminRoute}
@@ -540,9 +579,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
             {/* Main Content Area */}
             <div className={cn(
-                "transition-all duration-300 ease-in-out",
-                "lg:ml-80",
-                isSidebarCollapsed && "lg:ml-20"
+                "transition-all duration-300 ease-in-out relative",
+                "md:ml-64", // default sidebar width for md+
+                isSidebarCollapsed && "md:ml-16",
+                "sm:ml-0" // no sidebar margin on small screens
             )}>
                 {/* Top Navbar */}
                 <TopNavbar
@@ -550,10 +590,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     currentPageTitle={getCurrentPageTitle()}
                     currentPageDescription={getCurrentPageDescription()}
                     onMobileMenuToggle={toggleMobileSidebar}
+                    onLogout={() => { signOut({ redirectUrl: '/' }); toast.success("Logged out successfully"); }}
                 />
 
                 {/* Page Content */}
-                <main className="relative ml-10 lg:ml-0 p-6 md:p-2 lg:p-6">
+                <main className="relative ml-0 p-3 sm:p-4 md:p-6">
                     {children}
                 </main>
             </div>

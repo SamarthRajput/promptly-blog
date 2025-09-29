@@ -183,15 +183,6 @@ const AdminUsersPage = () => {
     return (
         <div className="min-h-screen bg-gray-50/50 p-6">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-semibold text-gray-900" title="User Management Dashboard">User Management</h1>
-                        <p className="text-gray-600 mt-1" title="Manage user accounts, roles, and permissions">Manage user accounts, roles, and permissions</p>
-                    </div>
-                </div>
-
-                {/* Stats Overview */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6" title="User statistics overview">
                     {[
                         { label: "Total Users", value: total, icon: Users, color: "text-blue-600" },

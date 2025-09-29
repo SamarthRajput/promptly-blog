@@ -5,6 +5,7 @@ import { comments, user, posts } from "@/db/schema";
 import { and, eq, desc, or, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncUser } from "./syncUser";
+import { logAudit } from "./logAudit";
 
 export interface CommentData {
   id: string;
@@ -75,7 +76,9 @@ export async function addComment(postId: string, content: string) {
       content: content.trim(),
       status: 'visible', // Auto-approve for now
     });
-
+    logAudit(dbUser.id, "comment", postId, "create", {
+      content: content.trim(),
+    });
     revalidatePath(`/blog/${postId}`);
   } catch (error) {
     console.error('Error adding comment:', error);
@@ -147,6 +150,10 @@ export async function deleteComment(commentId: string) {
   }
 
   if (comment.userId !== dbUser.id) {
+    logAudit(dbUser.id, "comment", commentId, "delete_attempt", {
+      success: false,
+      reason: "User attempted to delete a comment they do not own",
+    });
     throw new Error("You can only delete your own comments");
   }
 
@@ -157,6 +164,10 @@ export async function deleteComment(commentId: string) {
       .set({ status: 'deleted' })
       .where(eq(comments.id, commentId));
 
+    logAudit(dbUser.id, "comment", commentId, "delete", {
+      success: true,
+      message: "User deleted their own comment",
+    });
     revalidatePath(`/blog/${comment.postId}`);
   } catch (error) {
     console.error('Error deleting comment:', error);
