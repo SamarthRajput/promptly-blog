@@ -1,7 +1,9 @@
+// actions/syncUser.ts
 import { user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
+import { logAudit } from "./logAudit";
 
 export async function syncUser() {
   const clerkUser = await currentUser();
@@ -14,13 +16,22 @@ export async function syncUser() {
 
   if (existing.length === 0) {
     // if not, create new
-    await db.insert(user).values({
+    const newUser = await db.insert(user).values({
       clerkId: clerkUser.id,
       name: `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`,
       email: clerkUser.emailAddresses[0]?.emailAddress ?? "",
       avatarUrl: clerkUser.imageUrl ?? null,
       siteRole: adminEmail.includes(clerkUser.emailAddresses[0]?.emailAddress ?? "") ? "admin" : "user",
       bio: typeof clerkUser.publicMetadata.bio === "string" ? clerkUser.publicMetadata.bio : null,
+    }).returning();
+
+    if (newUser.length === 0) {
+      throw new Error("Failed to create user");
+    }
+    // Audit log — User created
+    await logAudit(newUser[0].id, "user", newUser[0].id, "create", {
+      email: newUser[0].email,
+      siteRole: newUser[0].siteRole,
     });
   } else {
     // if exists, update info
@@ -47,4 +58,10 @@ export async function getCurrentUser() {
     return null;
   }
   return existing[0];
+}
+
+export async function isAdmin() {
+  const current = await getCurrentUser();
+  if (!current) return false;
+  return current.siteRole === "admin";
 }

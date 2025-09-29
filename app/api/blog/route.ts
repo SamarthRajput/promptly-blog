@@ -5,6 +5,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { eq, and, isNull, desc, asc, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { generateGeminiResponse } from "@/utils/generateGeminiResponse";
+import { logAudit } from "@/actions/logAudit";
 
 // Types for better type safety
 export interface CreatePostRequest {
@@ -217,6 +218,10 @@ export async function POST(request: NextRequest) {
 
     const createdPost = newPostResult[0];
 
+    logAudit(author.id, 'post', createdPost.id, 'create', {
+      success: true,
+      message: `Post '${createdPost.title}' created by user ${author.id}`
+    });
     return NextResponse.json({
       success: true,
       message: "Post created successfully.",
@@ -373,6 +378,10 @@ export async function PUT(request: NextRequest) {
     // Find author
     const authorResult = await db.select().from(user).where(eq(user.clerkId, clerkUser.id));
     if (!authorResult || authorResult.length === 0) {
+      logAudit(clerkUser.id, 'post', id, 'update', {
+        success: false,
+        message: `Failed update attempt for post ${id} by user ${clerkUser.id} - author not found`
+      });
       return NextResponse.json({ error: "Author not found." }, { status: 404 });
     }
 
@@ -383,6 +392,10 @@ export async function PUT(request: NextRequest) {
       .limit(1);
 
     if (existingPost.length === 0) {
+      logAudit(authorResult[0].id, 'post', id, 'update', {
+        success: false,
+        message: `Failed update attempt for post ${id} by user ${authorResult[0].id} - post not found or access denied`
+      });
       return NextResponse.json({ error: "Post not found or access denied." }, { status: 404 });
     }
 
@@ -409,6 +422,10 @@ export async function PUT(request: NextRequest) {
       .where(eq(posts.id, id))
       .returning();
 
+    logAudit(authorResult[0].id, 'post', id, 'update', {
+      success: true,
+      message: `Post ${id} updated by user ${authorResult[0].id}`
+    });
     return NextResponse.json({
       success: true,
       message: "Post updated successfully.",

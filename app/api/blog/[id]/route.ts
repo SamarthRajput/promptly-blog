@@ -1,3 +1,4 @@
+import { logAudit } from "@/actions/logAudit";
 import { posts, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
@@ -32,6 +33,10 @@ export async function DELETE(request: NextRequest,
             .limit(1);
 
         if (existingPost.length === 0) {
+            logAudit(authorResult[0].id, 'post', postId, 'delete', {
+                success: false,
+                message: `Failed delete attempt for post ${postId} by user ${authorResult[0].id}`
+            });
             return NextResponse.json({ error: "Post not found or access denied." }, { status: 404 });
         }
 
@@ -42,6 +47,10 @@ export async function DELETE(request: NextRequest,
                 updatedAt: new Date()
             })
             .where(eq(posts.id, postId));
+        logAudit(authorResult[0].id, 'post', postId, 'delete', {
+            success: true,
+            message: `Post ${postId} soft-deleted by user ${authorResult[0].id}`
+        });
 
         return NextResponse.json({
             success: true,
@@ -70,13 +79,40 @@ export async function PUT(request: NextRequest,
             return NextResponse.json({ error: "Post ID is required." }, { status: 400 });
         }
         const { title, contentMd, coverImageId, status, scheduledAt, categoryId } = await request.json();
+        // Ensure scheduledAt is a Date or null
+        let scheduledAtValue: Date | null = null;
+        if (scheduledAt) {
+            const dateObj = new Date(scheduledAt);
+            scheduledAtValue = isNaN(dateObj.getTime()) ? null : dateObj;
+        }
+
         if (!title || !contentMd) {
+            logAudit(clerkUser.id, 'post', postId, 'update', {
+                success: false,
+                message: `Failed update attempt for post ${postId} by user ${clerkUser.id} - missing title or content`
+            });
             return NextResponse.json({ error: "Title and content are required." }, { status: 400 });
+        }
+        let statusDB;
+        if (status && status === 'published') {
+            statusDB = 'under_review';
+        } else if (status && (status === 'draft' || status === 'scheduled')) {
+            statusDB = status;
+        } else {
+            logAudit(clerkUser.id, 'post', postId, 'update', {
+                success: false,
+                message: `Failed update attempt for post ${postId} by user ${clerkUser.id} - invalid status`
+            });
+            return NextResponse.json({ error: "Invalid status value." }, { status: 400 });
         }
 
         // Find author
         const authorResult = await db.select().from(user).where(eq(user.clerkId, clerkUser.id));
         if (!authorResult || authorResult.length === 0) {
+            logAudit(clerkUser.id, 'post', postId, 'update', {
+                success: false,
+                message: `Failed update attempt for post ${postId} by user ${clerkUser.id} - author not found`
+            });
             return NextResponse.json({ error: "Author not found." }, { status: 404 });
         }
 
@@ -87,23 +123,32 @@ export async function PUT(request: NextRequest,
             .limit(1);
 
         if (existingPost.length === 0) {
+            logAudit(authorResult[0].id, 'post', postId, 'update', {
+                success: false,
+                message: `Failed update attempt for post ${postId} by user ${authorResult[0].id} - post not found or access denied`
+            });
             return NextResponse.json({ error: "Post not found or access denied." }, { status: 404 });
         }
-
+        // console.log(`\n\nExisting Post: ${JSON.stringify(existingPost[0])}\n\n`);
         // Update the post
-        await db.update(posts)
+        const updateResult = await db.update(posts)
             .set({
                 title,
                 contentMd,
                 coverImageId,
-                status,
-                scheduledAt,
+                status: statusDB,
+                scheduledAt: scheduledAtValue,
                 updatedAt: new Date()
             })
-            .where(eq(posts.id, postId));
+            .where(eq(posts.id, postId)).returning();
 
+        logAudit(authorResult[0].id, 'post', postId, 'update', {
+            success: true,
+            message: `Post ${postId} updated by user ${authorResult[0].id}`
+        });
         return NextResponse.json({
             success: true,
+            post: updateResult[0],
             message: "Post updated successfully."
         });
 

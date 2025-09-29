@@ -42,7 +42,10 @@ const EditBlog = async ({ params }: BlogPageProps) => {
     const result = await getBlogData(id);
 
     if (!result || !result.post) {
-        return showError('Blog post not found or you do not have permission to edit this post.');
+        return showError(`Blog post not found or you do not have permission to edit this post.
+            ${JSON.stringify(result)}
+            ${id}
+            ${result?.post}`);
     }
 
     return (

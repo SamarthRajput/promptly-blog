@@ -5,6 +5,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { posts } from "@/db/schema";
+import { logAudit } from "@/actions/logAudit";
 
 async function checkAdmin() {
     const clerkUser = await currentUser();
@@ -123,6 +124,7 @@ export async function PATCH(
             .where(eq(media.id, id))
             .returning();
 
+        logAudit(id, 'media', data[0].id, 'update', { altText, provider, message: 'Media updated' });
         return NextResponse.json(
             {
                 success: true, message: "Media updated successfully",
@@ -154,8 +156,9 @@ export async function DELETE(
         await db.update(posts).set({ coverImageId: null }).where(eq(posts.coverImageId, id));
 
         // Delete the media item
-        await db.delete(media).where(eq(media.id, id));
+        const deletedMedia = await db.delete(media).where(eq(media.id, id)).returning();
 
+        logAudit(id, 'media', deletedMedia[0].id, 'delete', { message: 'Media deleted' });
         // TODO: Consider deleting associated files from storage if applicable
         return NextResponse.json(
             { success: true, message: "Media deleted successfully" },

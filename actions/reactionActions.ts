@@ -5,6 +5,7 @@ import { postReactions, posts, user } from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncUser } from "./syncUser";
+import { logAudit } from "./logAudit";
 
 export type ReactionType = 'like' | 'love' | 'clap' | 'insightful' | 'laugh' | 'sad' | 'angry';
 
@@ -80,12 +81,18 @@ export async function toggleReaction(postId: string, reactionType: ReactionType)
             eq(postReactions.type, reactionType)
           )
         );
+      await logAudit(dbUser.id, "post", postId, "delete", {
+        reactionType,
+      });
     } else {
       // Add new reaction
       await db.insert(postReactions).values({
         postId,
         userId: dbUser.id,
         type: reactionType,
+      });
+      await logAudit(dbUser.id, "post", postId, "create", {
+        reactionType,
       });
     }
 

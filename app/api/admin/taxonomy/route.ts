@@ -5,6 +5,8 @@ import { sql, eq, or } from "drizzle-orm";
 import { categories, postCategories, postTags, tags } from "@/db/schema";
 import { getCurrentUser } from "@/actions/syncUser";
 import { currentUser } from "@clerk/nextjs/server";
+import { logAudit } from "@/actions/logAudit";
+import { success } from "zod";
 
 type BodyType = {
     type: "category" | "tag";
@@ -80,7 +82,7 @@ export async function POST(req: Request) {
         if (!existingUser || existingUser.siteRole !== "admin") {
             return NextResponse.json({ error: "Access Denied. Admins only." }, { status: 403 });
         }
-        
+
         const body: BodyType = await req.json();
 
         if (!body.type || !body.name) {
@@ -99,6 +101,10 @@ export async function POST(req: Request) {
                 .limit(1);
             const existingCategory = existingCategoryArr[0];
             if (existingCategory) {
+                logAudit(existingUser.id, 'other', existingCategory.id, 'create', {
+                    success: false,
+                    message: `Attempted to create duplicate category '${body.name}' by admin ${existingUser.id}`
+                });
                 return NextResponse.json({ success: true, category: existingCategory, message: "Category already exists" });
             }
 
@@ -124,10 +130,18 @@ export async function POST(req: Request) {
                 .limit(1);
             const existingTag = existingTagArr[0];
             if (existingTag) {
+                logAudit(existingUser.id, 'other', existingTag.id, 'create', {
+                    success: false,
+                    message: `Attempted to create duplicate tag '${body.name}' or slug '${body.slug}' by admin ${existingUser.id}`
+                });
                 return NextResponse.json({ success: true, tag: existingTag, message: "Tag already exists" });
             }
 
             const [inserted] = await db.insert(tags).values({ name: body.name, slug: body.slug }).returning();
+            logAudit(existingUser.id, 'other', inserted.id, 'create', {
+                success: true,
+                message: `Tag '${body.name}' created by admin ${existingUser.id}`
+            });
             return NextResponse.json({ success: true, tag: inserted });
         }
 
@@ -162,6 +176,10 @@ export async function PUT(req: Request) {
 
         if (body.type === "category") {
             const [updated] = await db.update(categories).set({ name: body.name }).where(eq(categories.id, body.id)).returning();
+            logAudit(existingUser.id, 'other', updated.id, 'update', {
+                success: true,
+                message: `Category '${body.name}' updated by admin ${existingUser.id}`
+            });
             return NextResponse.json({ success: true, category: updated });
         }
 
@@ -173,6 +191,10 @@ export async function PUT(req: Request) {
                 );
             }
             const [updated] = await db.update(tags).set({ name: body.name, slug: body.slug }).where(eq(tags.id, body.id)).returning();
+            logAudit(existingUser.id, 'other', updated.id, 'update', {
+                success: true,
+                message: `Tag '${body.name}' updated by admin ${existingUser.id}`
+            });
             return NextResponse.json({ success: true, tag: updated });
         }
     } catch (error) {
@@ -205,11 +227,19 @@ export async function DELETE(req: Request) {
 
         if (body.type === "category") {
             await db.delete(categories).where(eq(categories.id, body.id));
+            logAudit(existingUser.id, 'other', body.id, 'delete', {
+                success: true,
+                message: `Category deleted by admin ${existingUser.id}`
+            });
             return NextResponse.json({ success: true, message: "Category deleted" });
         }
 
         if (body.type === "tag") {
             await db.delete(tags).where(eq(tags.id, body.id));
+            logAudit(existingUser.id, 'other', body.id, 'delete', {
+                success: true,
+                message: `Tag deleted by admin ${existingUser.id}`
+            });
             return NextResponse.json({ success: true, message: "Tag deleted" });
         }
     } catch (error) {

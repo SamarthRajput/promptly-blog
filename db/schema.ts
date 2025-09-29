@@ -76,6 +76,7 @@ export const auditActionEnum = pgEnum("audit_action", [
     "create",
     "update",
     "delete",
+    "delete_attempt",
     "submit",
     "approve",
     "reject",
@@ -87,14 +88,19 @@ export const auditActionEnum = pgEnum("audit_action", [
     "invite_revoke",
     "login",
     "logout",
+    "other",
 ]);
 
 export const auditTargetEnum = pgEnum("audit_target", [
     "post",
     "comment",
+    "media",
     "user",
     "invitation",
     "approval",
+    "system",
+    "email",
+    "other",
 ]);
 
 /**
@@ -461,6 +467,10 @@ export const contactQueries = pgTable(
 
         // Status of the query
         status: contactStatusEnum("status").default("new").notNull(),
+
+        reply: text("reply"),
+        repliedAt: timestamp("replied_at", { withTimezone: true }),
+        repliedBy: uuid("replied_by").references(() => user.id),
 
         // Timestamps
         createdAt: timestamp("created_at", { withTimezone: true })

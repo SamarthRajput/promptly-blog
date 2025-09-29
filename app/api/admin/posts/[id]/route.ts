@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/actions/syncUser";
 import { currentUser } from "@clerk/nextjs/server";
+import { logAudit } from "@/actions/logAudit";
 
 export async function PUT(
     req: Request,
@@ -89,6 +90,11 @@ export async function PUT(
                     | "archived",
                 reason: reason || null,
             });
+
+            logAudit(adminId, 'post', postId, 'approve', {
+                reason,
+                message: `Post ${postId} ${statusChange} by admin ${adminId}`
+             });
         }
 
         return NextResponse.json({ success: true, action: statusChange });
