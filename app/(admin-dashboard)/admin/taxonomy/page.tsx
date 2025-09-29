@@ -306,48 +306,48 @@ const TaxonomyAdminPage = () => {
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 w-full">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 flex flex-col justify-between shadow-sm min-w-0">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Categories</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{totalCategories}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Categories</p>
+                <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1">{totalCategories}</p>
               </div>
-              <div className="p-3 rounded-lg bg-blue-50 text-blue-600">
-                <FolderOpen className="w-6 h-6" />
+              <div className="p-2 sm:p-3 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 flex flex-col justify-between shadow-sm min-w-0">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Tags</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{totalTags}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Total Tags</p>
+                <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1">{totalTags}</p>
               </div>
-              <div className="p-3 rounded-lg bg-green-50 text-green-600">
-                <Tag className="w-6 h-6" />
+              <div className="p-2 sm:p-3 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+                <Tag className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 flex flex-col justify-between shadow-sm min-w-0">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Unused Categories</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{unusedCategories}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Unused Categories</p>
+                <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1">{unusedCategories}</p>
               </div>
-              <div className="p-3 rounded-lg bg-amber-50 text-amber-600">
-                <Archive className="w-6 h-6" />
+              <div className="p-2 sm:p-3 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Archive className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 flex flex-col justify-between shadow-sm min-w-0">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Unused Tags</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{unusedTags}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">Unused Tags</p>
+                <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-1">{unusedTags}</p>
               </div>
-              <div className="p-3 rounded-lg bg-red-50 text-red-600">
-                <Clock className="w-6 h-6" />
+              <div className="p-2 sm:p-3 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
             </div>
           </div>
@@ -445,21 +445,21 @@ const TaxonomyAdminPage = () => {
           </div>
 
           {/* Controls */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div className="flex flex-1 items-center gap-4">
-                <div className="relative flex-1 max-w-md">
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex flex-col gap-4 sm:flex-row sm:gap-4 items-stretch sm:items-center justify-between">
+              <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-2 sm:gap-4 w-full">
+                <div className="relative flex-1 max-w-full sm:max-w-md">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder={`Search ${activeTab}...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-row gap-2 mt-2 sm:mt-0">
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as 'name' | 'createdAt' | 'postsCount')}
@@ -481,7 +481,7 @@ const TaxonomyAdminPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-row gap-2 sm:gap-3 items-center mt-2 sm:mt-0">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -505,8 +505,8 @@ const TaxonomyAdminPage = () => {
 
           {/* Add Form */}
           {showAddForm && (
-            <div className="p-6 bg-gray-50 border-b border-gray-200">
-              <div className="max-w-md space-y-4">
+            <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+              <div className="max-w-full sm:max-w-md space-y-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   Add New {activeTab === 'categories' ? 'Category' : 'Tag'}
                 </h3>
@@ -540,11 +540,11 @@ const TaxonomyAdminPage = () => {
                   </div>
                 )}
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                   <button
                     onClick={handleCreate}
                     disabled={!newItemName.trim() || addingItems}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {addingItems ? (
                       <>
@@ -565,7 +565,7 @@ const TaxonomyAdminPage = () => {
                       setNewItemName('');
                       setNewItemSlug('');
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                   >
                     <X className="w-4 h-4" />
                     Cancel
