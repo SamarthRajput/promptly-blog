@@ -32,7 +32,7 @@ const AuditLogsPage = () => {
     endDate: Date | undefined;
   }>({
     page: 1,
-    pageSize: 10,
+    pageSize: 30,
     q: "",
     targetType: "",
     action: "",
@@ -420,7 +420,7 @@ const AuditLogsPage = () => {
                 }
                 title="Select number of logs per page"
               >
-                {[10, 20, 30, 50].map(size => (
+                {[10, 20, 30, 50, 100].map(size => (
                   <option key={size} value={size}>{size} / page</option>
                 ))}
               </select>
