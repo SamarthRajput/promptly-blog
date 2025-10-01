@@ -162,10 +162,8 @@ export async function POST(request: NextRequest) {
       if (imageResult.length === 0) {
         return NextResponse.json({ error: "Cover image not found." }, { status: 404 });
       }
-      console.log("\n\nCover image validated:", imageResult[0]);
     } else {
       imageResult = [];
-      console.log("\n\nNo cover image provided, proceeding without it.");
     }
 
     // Generate unique slug

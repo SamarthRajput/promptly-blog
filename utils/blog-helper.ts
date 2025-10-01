@@ -86,7 +86,6 @@ export const fetchPostWithCategories = async (
         ))
         .limit(1)
         .execute();
-    console.log(postResult);
     if (postResult.length === 0) throw new Error("Post not found or not yours.");
     const post = postResult[0];
 

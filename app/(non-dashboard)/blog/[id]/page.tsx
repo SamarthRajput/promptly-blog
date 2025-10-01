@@ -23,7 +23,6 @@ const getBlogData = async (id: string) => {
             fetchPostWithCategories(id, userId, true),
             fetchAllCategories()
         ]);
-        console.log("the post data is ", postData);
         if (!postData) return null;
 
         // Serialize post and categories

@@ -15,7 +15,6 @@ export async function incrementPostView(postId: string) {
     // 3. Implement rate limiting
     
     // For now, we'll just update a counter
-    console.log(`View tracked for post: ${postId}`);
     
     // You could add a views column to posts table or create a separate views table
     return true;

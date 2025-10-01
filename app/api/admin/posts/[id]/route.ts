@@ -107,7 +107,6 @@ export async function PUT(
 export async function GET(req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    console.log("\n\nFetching post for admin with ID:", (await params).id);
     try {
         // Check if user is logged in
         const clerkUser = await currentUser();

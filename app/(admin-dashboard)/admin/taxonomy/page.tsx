@@ -928,7 +928,6 @@ const TaxonomyAdminPage = () => {
               <button
                 onClick={() => {
                   toast('Feature coming soon!');
-                  console.log('Bulk delete:', selectedItems);
                   setSelectedItems([]);
                 }}
                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"

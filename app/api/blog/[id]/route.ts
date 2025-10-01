@@ -129,7 +129,6 @@ export async function PUT(request: NextRequest,
             });
             return NextResponse.json({ error: "Post not found or access denied." }, { status: 404 });
         }
-        // console.log(`\n\nExisting Post: ${JSON.stringify(existingPost[0])}\n\n`);
         // Update the post
         const updateResult = await db.update(posts)
             .set({
