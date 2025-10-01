@@ -48,8 +48,6 @@ export async function toggleReaction(postId: string, reactionType: ReactionType)
       and(
         eq(posts.id, postId),
         eq(posts.status, 'approved'),
-        eq(posts.status, 'rejected'),
-        eq(posts.status, 'under_review')
       )
     );
 

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { BlogType, CategoryType } from '@/types/blog';
 import { checkAndMakeValidSlug } from '@/utils/helper-blog';
+import { CategoryMultiSelect } from './CategoryMultiSelect';
 
 // Loading Spinner Component
 const LoadingSpinner = ({ className = "" }) => (
@@ -352,22 +353,14 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                         </FormField>
 
                         {categories.length > 0 && (
-                            <FormField label="Category" icon={Tag}>
-                                <select
-                                    id="categoryId"
-                                    name="categoryId"
-                                    multiple
-                                    value={formData.categoryId}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400"
-                                >
-                                    <option value="">Select categories</option>
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </option>
-                                    ))}
-                                </select>
+                            <FormField label="Categories" icon={Tag}>
+                                <CategoryMultiSelect
+                                    categories={categories}
+                                    selectedCategories={formData.categoryId}
+                                    onChange={(selected) => setFormData(prev => ({ ...prev, categoryId: selected }))}
+                                    placeholder="Select categories for your post..."
+                                    className="w-full"
+                                />
                             </FormField>
                         )}
 
