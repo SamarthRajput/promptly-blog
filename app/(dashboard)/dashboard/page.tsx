@@ -295,7 +295,7 @@ const DashboardHomePage = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h2 className="text-2xl font-bold mb-2">Ready to create?</h2>
-              <p className="text-blue-100">
+              <p className="text-blue-500">
                 Start writing your next amazing post and share your ideas with the world.
               </p>
             </div>

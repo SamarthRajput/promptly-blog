@@ -268,7 +268,7 @@ const Sidebar: React.FC<SidebarProps> = ({ loggedInUser, isAdminRoute, isCollaps
                                 )}
                             />
                             {
-                                typeof window !== "undefined" && (!isCollapsed || isMobile) && (
+                                (!isCollapsed || isMobile) && (
                                     <span className="font-medium ml-3">{item.title}</span>
                                 )}
                             {active && (!isCollapsed || isMobile) && (

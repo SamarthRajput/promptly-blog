@@ -1,10 +1,26 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { posts, postReactions, comments, postCategories, categories, user } from "@/db/schema";
-import { and, eq, sql, gte, lte, desc } from "drizzle-orm";
+import {
+  posts,
+  postReactions,
+  comments,
+  postCategories,
+  categories,
+  user
+} from "@/db/schema";
+import { and, eq, sql, gte, lte, inArray, desc } from "drizzle-orm";
 import { AnalyticsData, MonthlyData, TopPost } from "../types/analytics";
 import { syncUser } from "./syncUser";
+
+// Use the actual enum type if available, otherwise use 'as const' to narrow the type
+const POST_STATUS_ANALYTICS = [
+  "approved",
+  "scheduled",
+  "under_review",
+  "rejected"
+] as const; // Adjust as needed
+type PostStatus = typeof POST_STATUS_ANALYTICS[number];
 
 export async function getAnalyticsData(
   startDate: Date,
@@ -21,22 +37,21 @@ export async function getAnalyticsData(
 
   if (!dbUser) throw new Error("User not found");
 
-  // Total Blogs (published posts)
+  // Total Blogs (published posts: non-archived, non-draft, non-deleted)
   const [totalBlogsResult] = await db
     .select({ count: sql<number>`count(*)` })
     .from(posts)
     .where(
       and(
         eq(posts.authorId, dbUser.id),
-        eq(posts.status, 'approved'),
-        eq(posts.status, 'rejected'),
-        eq(posts.status, 'under_review'),
+        inArray(posts.status, POST_STATUS_ANALYTICS),
         gte(posts.publishedAt, startDate),
-        lte(posts.publishedAt, endDate)
+        lte(posts.publishedAt, endDate),
+        sql`${posts.deletedAt} IS NULL` // Not deleted
       )
     );
 
-  // Total Likes
+  // Total Likes (by reaction)
   const [totalLikesResult] = await db
     .select({ count: sql<number>`count(*)` })
     .from(postReactions)
@@ -44,21 +59,29 @@ export async function getAnalyticsData(
     .where(
       and(
         eq(posts.authorId, dbUser.id),
-        eq(postReactions.type, 'like'),
+        eq(postReactions.type, "like"), // For "like" only
         gte(postReactions.createdAt, startDate),
-        lte(postReactions.createdAt, endDate)
+        lte(postReactions.createdAt, endDate),
+        sql`${posts.deletedAt} IS NULL`
       )
     );
 
-  // For now, we are using placeholder value for view as views are not implemented in database schema 
-  // const totalViews = Math.floor(totalBlogsResult.count * 150); // Placeholder calculation
+  // Placeholder Views (to be implemented)
   const totalViews = 0;
 
   // Monthly Data (last 6 months)
-  const monthlyData = await getMonthlyEngagementData(dbUser.id, startDate, endDate);
+  const monthlyData = await getMonthlyEngagementData(
+    dbUser.id,
+    startDate,
+    endDate
+  );
 
   // Top Performing Posts
-  const topPosts = await getTopPerformingPosts(dbUser.id, startDate, endDate);
+  const topPosts = await getTopPerformingPosts(
+    dbUser.id,
+    startDate,
+    endDate
+  );
 
   const totalLikes = totalLikesResult.count;
   const engagementRate = totalViews > 0 ? (totalLikes / totalViews) * 100 : 0;
@@ -69,7 +92,7 @@ export async function getAnalyticsData(
     totalLikes,
     engagementRate: Number(engagementRate.toFixed(2)),
     monthlyData,
-    topPosts,
+    topPosts
   };
 }
 
@@ -82,7 +105,7 @@ async function getMonthlyEngagementData(
     .select({
       month: sql<string>`to_char(${posts.publishedAt}, 'YYYY-MM')`,
       posts: sql<number>`count(*)`,
-      likes: sql<number>`coalesce(sum(reaction_counts.like_count), 0)`,
+      likes: sql<number>`coalesce(sum(reaction_counts.like_count), 0)`
     })
     .from(posts)
     .leftJoin(
@@ -98,11 +121,10 @@ async function getMonthlyEngagementData(
     .where(
       and(
         eq(posts.authorId, userId),
-        eq(posts.status, 'approved'),
-        eq(posts.status, 'rejected'),
-        eq(posts.status, 'under_review'),
+        inArray(posts.status, POST_STATUS_ANALYTICS),
         gte(posts.publishedAt, startDate),
-        lte(posts.publishedAt, endDate)
+        lte(posts.publishedAt, endDate),
+        sql`${posts.deletedAt} IS NULL`
       )
     )
     .groupBy(sql`to_char(${posts.publishedAt}, 'YYYY-MM')`)
@@ -110,9 +132,9 @@ async function getMonthlyEngagementData(
 
   return monthlyResults.map((row) => ({
     month: row.month,
-    views: 0, // Placeholder until implement view tracking
+    views: 0, // Placeholder until view tracking implemented
     likes: row.likes,
-    posts: row.posts,
+    posts: row.posts
   }));
 }
 
@@ -128,7 +150,7 @@ async function getTopPerformingPosts(
       categoryName: categories.name,
       publishedAt: posts.publishedAt,
       likes: sql<number>`coalesce(reaction_counts.like_count, 0)`,
-      comments: sql<number>`coalesce(comment_counts.comment_count, 0)`,
+      comments: sql<number>`coalesce(comment_counts.comment_count, 0)`
     })
     .from(posts)
     .leftJoin(postCategories, eq(posts.id, postCategories.postId))
@@ -157,11 +179,10 @@ async function getTopPerformingPosts(
     .where(
       and(
         eq(posts.authorId, userId),
-        eq(posts.status, 'approved'),
-        eq(posts.status, 'rejected'),
-        eq(posts.status, 'under_review'),
+        inArray(posts.status, POST_STATUS_ANALYTICS),
         gte(posts.publishedAt, startDate),
-        lte(posts.publishedAt, endDate)
+        lte(posts.publishedAt, endDate),
+        sql`${posts.deletedAt} IS NULL`
       )
     )
     .orderBy(desc(sql`coalesce(reaction_counts.like_count, 0)`))
@@ -169,17 +190,18 @@ async function getTopPerformingPosts(
 
   return topPostsData.map((post) => {
     const views = 0; // Placeholder until you implement view tracking
-    const engagementRate = views > 0 ? ((post.likes + post.comments) / views) * 100 : 0;
+    const engagementRate =
+      views > 0 ? ((post.likes + post.comments) / views) * 100 : 0;
 
     return {
       id: post.id,
       title: post.title,
-      category: post.categoryName || 'Uncategorized',
+      category: post.categoryName || "Uncategorized",
       views,
       likes: post.likes,
       comments: post.comments,
       engagementRate: Number(engagementRate.toFixed(2)),
-      publishedAt: post.publishedAt!,
+      publishedAt: post.publishedAt!
     };
   });
 }
