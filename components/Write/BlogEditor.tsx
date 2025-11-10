@@ -24,6 +24,7 @@ import {
 import { BlogType, CategoryType } from '@/types/blog';
 import { checkAndMakeValidSlug } from '@/utils/helper-blog';
 import { CategoryMultiSelect } from './CategoryMultiSelect';
+import BlogPreviewModal from './BlogPreviewModal';
 
 const LoadingSpinner = ({ className = "" }) => (
     <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
@@ -130,6 +131,10 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [showPreview, setShowPreview] = useState(false);
+    const [uploadedCoverImageUrl, setUploadedCoverImageUrl] = useState<string | null>(
+        post?.coverImage?.url || null
+    );
     const [formData, setFormData] = useState({
         title: post?.title || "",
         slug: post?.slug || "",
@@ -279,7 +284,11 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
     };
 
     const handlePreview = () => {
-        toast.info('Preview feature coming soon!');
+        if (!formData.title.trim() && !formData.contentMd.trim()) {
+            toast.error('Please add a title or content to preview');
+            return;
+        }
+        setShowPreview(true);
     };
 
     return (
@@ -365,6 +374,9 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                                     thumbnailId={formData.coverImageId}
                                     setThumbnailId={(id) => setFormData(prev => ({ ...prev, coverImageId: id ?? "" }))}
                                     existingImageUrl={post?.coverImage?.url}
+                                    onImageUpload={(imageUrl) => {
+                                        setUploadedCoverImageUrl(imageUrl);
+                                    }}
                                 />
                             </div>
                         </FormField>
@@ -483,6 +495,14 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                     </form>
                 </div>
             </div>
+            <BlogPreviewModal
+                isOpen={showPreview}
+                onClose={() => setShowPreview(false)}
+                title={formData.title}
+                content={formData.contentMd}
+                coverImageUrl={uploadedCoverImageUrl || post?.coverImage?.url}
+                readingTime={Math.ceil(formData.contentMd.split(/\s+/).length / 200)}
+            />
         </div>
     );
 }

@@ -56,6 +56,7 @@ interface ThumbnailSectionProps {
     title?: string;
     contentMD?: string; 
     existingImageUrl?: string;
+    onImageUpload?: (imageUrl: string) => void;
 }
 
 interface DBResponse {
@@ -83,7 +84,8 @@ const ThumbnailSection = ({
     setThumbnailId,
     title = "",
     contentMD = "",
-    existingImageUrl
+    existingImageUrl,
+    onImageUpload
 }: ThumbnailSectionProps) => {
     // Existing state
     const [isLoading, setIsLoading] = useState(false);
@@ -153,6 +155,11 @@ const ThumbnailSection = ({
         img.onload = () => {
             setPreviewLoading(false);
             setThumbnail(url);
+
+            if (onImageUpload) {
+                onImageUpload(url);
+            }
+
             toast.success('Image loaded successfully!');
         };
         img.onerror = () => {
@@ -246,6 +253,10 @@ const ThumbnailSection = ({
         setSelectedImage(image);
         setIsModalOpen(false);
 
+        if (onImageUpload) {
+            onImageUpload(image.urls.regular);
+        }
+
         await uploadImage(image.urls.regular, image.alt_description || image.description || `Photo by ${image.user.name}`, 'unsplash');
     };
 
@@ -274,6 +285,11 @@ const ThumbnailSection = ({
             if (setThumbnailId) {
                 setThumbnailId(media.id);
             }
+
+            if (onImageUpload) {
+                onImageUpload(media.url);
+            }
+
             toast.success('Image saved to media library!', {
                 description: 'You can now use this image as your blog thumbnail.'
             });
@@ -326,6 +342,11 @@ const ThumbnailSection = ({
             if (setThumbnailId) {
                 setThumbnailId(media.id);
             }
+
+            if (onImageUpload) {
+                onImageUpload(media.url);
+            }
+
             setIsUploadModalOpen(false);
             toast.success('Image uploaded and saved!', {
                 description: 'You can now use this image as your blog thumbnail.'
@@ -340,7 +361,6 @@ const ThumbnailSection = ({
         }
     };
 
-    // NEW: AI Generation Functions
     const handleGenerateImage = async () => {
         if (!title && !customPrompt.trim()) {
             toast.error('Content Required', {
