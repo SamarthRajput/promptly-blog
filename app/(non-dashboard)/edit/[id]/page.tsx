@@ -1,6 +1,7 @@
 import { serializeDocument } from '@/utils/date-formatter';
 import BlogEditor from '@/components/Write/BlogEditor';
-import { fetchAllCategories, fetchPostWithCategories, getUserIdFromClerk } from '@/utils/blog-helper';
+import { fetchAllCategories, fetchPostWithCategories } from '@/utils/blog-helper';
+import { getCurrentUser } from '@/actions/syncUser';
 
 // Define the expected type for the props
 interface BlogPageProps {
@@ -11,24 +12,30 @@ interface BlogPageProps {
 
 const getBlogData = async (id: string) => {
     try {
-        const userId = await getUserIdFromClerk();
-        // promise all to fetch post and categories concurrently
-        if (!userId) throw new Error("User not authenticated.");
+        const currentUser = await getCurrentUser();
+        if (!currentUser) throw new Error("User not authenticated.");
 
         const [postData, allCategories] = await Promise.all([
-            fetchPostWithCategories(id, userId, false),
+            fetchPostWithCategories(id, currentUser.id, true),
             fetchAllCategories()
         ]);
 
         if (!postData) return null;
 
-        // Serialize post and categories
-        const serializedPost = serializeDocument(postData);
-        const serializedCategories = postData.categories.map(serializeDocument);
-
+        const { coverImage, categories, comments, reactionCounts, userReactions, ...postFields } = postData;
+        const serializedPost = {
+            ...serializeDocument(postFields),
+            coverImage: coverImage ? serializeDocument(coverImage) : null,
+            categories: categories,
+            comments: comments,
+            reactionCounts: reactionCounts,
+            userReactions: userReactions,
+            totalComments: postData.totalComments,
+            totalReactions: postData.totalReactions,
+        };
         return {
             post: serializedPost,
-            category: serializedCategories,
+            category: categories,
             categories: allCategories
         };
     } catch (error) {

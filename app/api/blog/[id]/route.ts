@@ -74,77 +74,80 @@ export async function PUT(request: NextRequest,
         if (!clerkUser || !clerkUser.id) {
             return NextResponse.json({ error: "Unauthorized, please log in." }, { status: 401 });
         }
+        
         const postId = (await params).id;
         if (!postId) {
             return NextResponse.json({ error: "Post ID is required." }, { status: 400 });
         }
+
+        const authorResult = await db.select().from(user).where(eq(user.clerkId, clerkUser.id));
+        if (!authorResult || authorResult.length === 0) {
+            return NextResponse.json({ error: "Author not found." }, { status: 404 });
+        }
+        const dbUserId = authorResult[0].id;
+
         const { title, contentMd, coverImageId, status, scheduledAt, categoryId } = await request.json();
-        // Ensure scheduledAt is a Date or null
+        
         let scheduledAtValue: Date | null = null;
         if (scheduledAt) {
             const dateObj = new Date(scheduledAt);
             scheduledAtValue = isNaN(dateObj.getTime()) ? null : dateObj;
         }
 
+        const coverImageIdValue = coverImageId && coverImageId.trim() !== '' ? coverImageId : null;
+
         if (!title || !contentMd) {
-            logAudit(clerkUser.id, 'post', postId, 'update', {
+            await logAudit(dbUserId, 'post', postId, 'update', {
                 success: false,
-                message: `Failed update attempt for post ${postId} by user ${clerkUser.id} - missing title or content`
+                message: `Failed update attempt for post ${postId} - missing title or content`
             });
             return NextResponse.json({ error: "Title and content are required." }, { status: 400 });
         }
+
         let statusDB;
         if (status && status === 'published') {
             statusDB = 'under_review';
-        } else if (status && (status === 'draft' || status === 'scheduled')) {
+        } else if (status && (status === 'draft' || status === 'scheduled' || status === 'under_review' || status === 'approved')) {
             statusDB = status;
         } else {
-            logAudit(clerkUser.id, 'post', postId, 'update', {
+            await logAudit(dbUserId, 'post', postId, 'update', {
                 success: false,
-                message: `Failed update attempt for post ${postId} by user ${clerkUser.id} - invalid status`
+                message: `Failed update attempt for post ${postId} - invalid status: ${status}`
             });
             return NextResponse.json({ error: "Invalid status value." }, { status: 400 });
         }
 
-        // Find author
-        const authorResult = await db.select().from(user).where(eq(user.clerkId, clerkUser.id));
-        if (!authorResult || authorResult.length === 0) {
-            logAudit(clerkUser.id, 'post', postId, 'update', {
-                success: false,
-                message: `Failed update attempt for post ${postId} by user ${clerkUser.id} - author not found`
-            });
-            return NextResponse.json({ error: "Author not found." }, { status: 404 });
-        }
-
-        // Check if post exists and user owns it
         const existingPost = await db.select()
             .from(posts)
-            .where(and(eq(posts.id, postId), eq(posts.authorId, authorResult[0].id)))
+            .where(and(eq(posts.id, postId), eq(posts.authorId, dbUserId)))
             .limit(1);
 
         if (existingPost.length === 0) {
-            logAudit(authorResult[0].id, 'post', postId, 'update', {
+            await logAudit(dbUserId, 'post', postId, 'update', {
                 success: false,
-                message: `Failed update attempt for post ${postId} by user ${authorResult[0].id} - post not found or access denied`
+                message: `Failed update attempt for post ${postId} - post not found or access denied`
             });
             return NextResponse.json({ error: "Post not found or access denied." }, { status: 404 });
         }
+
         // Update the post
         const updateResult = await db.update(posts)
             .set({
                 title,
                 contentMd,
-                coverImageId,
+                coverImageId: coverImageIdValue,
                 status: statusDB,
                 scheduledAt: scheduledAtValue,
                 updatedAt: new Date()
             })
-            .where(eq(posts.id, postId)).returning();
+            .where(eq(posts.id, postId))
+            .returning();
 
-        logAudit(authorResult[0].id, 'post', postId, 'update', {
+        await logAudit(dbUserId, 'post', postId, 'update', {
             success: true,
-            message: `Post ${postId} updated by user ${authorResult[0].id}`
+            message: `Post ${postId} updated successfully`
         });
+
         return NextResponse.json({
             success: true,
             post: updateResult[0],

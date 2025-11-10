@@ -177,7 +177,7 @@ const EnhancedManageBlogs: React.FC<ManageBlogsProps> = ({ blogs }) => {
 
     // Existing handlers
     const handleBlogEdit = useCallback((blogId: string) => {
-        router.push(`/dashboard/blogs/edit/${blogId}`);
+        router.push(`/edit/${blogId}`);
     }, [router]);
 
     const handleBlogDelete = useCallback((blogId: string) => {

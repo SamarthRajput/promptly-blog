@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
     ArrowLeft,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 interface Post {
     id: string;
@@ -155,7 +156,9 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
     const [showAnalysisModal, setShowAnalysisModal] = useState(false);
 
-    const { id: postId } = React.use(params);
+    const { id: postId } = use(params);
+
+    const router = useRouter();
 
     // Fetch post data
     useEffect(() => {
@@ -307,7 +310,9 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
             <div className="min-h-screen bg-gray-50/50 p-6">
                 <div className="max-w-4xl mx-auto">
                     <button
-                        onClick={() => window.history.back()}
+                        onClick={() => {
+                            router.push('/admin/reviews')
+                        }}
                         className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors mb-6"
                     >
                         <ArrowLeft className="w-4 h-4" />
@@ -336,7 +341,9 @@ const PostReviewDetailPage = ({ params }: { params: Promise<{ id: string }> }) =
                 {/* Header with Back Button */}
                 <div className="flex items-center justify-between">
                     <button
-                        onClick={() => window.history.back()}
+                        onClick={() => (
+                            router.push('/admin/reviews')
+                        )}
                         className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />

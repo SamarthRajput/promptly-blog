@@ -364,6 +364,7 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                                 <ThumbnailSection
                                     thumbnailId={formData.coverImageId}
                                     setThumbnailId={(id) => setFormData(prev => ({ ...prev, coverImageId: id ?? "" }))}
+                                    existingImageUrl={post?.coverImage?.url}
                                 />
                             </div>
                         </FormField>
@@ -418,9 +419,8 @@ export default function BlogEditor({ post, categories = [], mode = 'create', sel
                                     className="w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base bg-white border border-slate-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400"
                                 >
                                     <option value="draft">Draft</option>
-                                    <option value="submitted">Submitted</option>
                                     <option value="scheduled">Scheduled</option>
-                                    <option value="published">Published</option>
+                                    <option value="published">Submitted</option>
                                 </select>
                             </FormField>
                             {formData.status === "scheduled" && (

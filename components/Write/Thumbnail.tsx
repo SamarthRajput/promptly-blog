@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +54,8 @@ interface ThumbnailSectionProps {
     setThumbnailId?: (id: string | null) => void;
     // Add these props for AI generation context
     title?: string;
-    contentMD?: string;
+    contentMD?: string; 
+    existingImageUrl?: string;
 }
 
 interface DBResponse {
@@ -81,7 +82,8 @@ const ThumbnailSection = ({
     thumbnailId,
     setThumbnailId,
     title = "",
-    contentMD = ""
+    contentMD = "",
+    existingImageUrl
 }: ThumbnailSectionProps) => {
     // Existing state
     const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +96,7 @@ const ThumbnailSection = ({
     const [isUploading, setIsUploading] = useState(false);
     const [selectedImage, setSelectedImage] = useState<UnsplashImage | null>(null);
     const [page, setPage] = useState(1);
-    const [thumbnail, setThumbnail] = useState<string | null>(null);
+    const [thumbnail, setThumbnail] = useState<string | null>(existingImageUrl || null);
     const [previewLoading, setPreviewLoading] = useState(false);
 
     // Enhanced state with AI generation tab
@@ -115,6 +117,12 @@ const ThumbnailSection = ({
         timestamp: Date;
         style: string;
     }>>([]);
+
+    useEffect(() => {
+        if (existingImageUrl && !thumbnail) {
+            setThumbnail(existingImageUrl);
+        }
+    }, [existingImageUrl]);
 
     // Predefined styles for better results
     const imageStyles = [

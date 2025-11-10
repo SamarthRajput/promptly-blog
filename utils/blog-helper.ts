@@ -45,7 +45,7 @@ export const fetchPostWithCategories = async (
     const postId = await resolvePostId(idOrSlug);
     if (!postId) throw new Error("Post not found.");
 
-    // Main post query with cover image
+    // Main post query with cover image - Select media fields separately
     const postResult = await db
         .select({
             id: posts.id,
@@ -65,14 +65,12 @@ export const fetchPostWithCategories = async (
             updatedAt: posts.updatedAt,
             deletedAt: posts.deletedAt,
 
-            // Cover image info from media
-            coverImage: {
-                id: media.id,
-                url: media.url,
-                type: media.type,
-                altText: media.altText,
-                provider: media.provider,
-            }
+            // Select media fields separately (not nested)
+            mediaId: media.id,
+            mediaUrl: media.url,
+            mediaType: media.type,
+            mediaAltText: media.altText,
+            mediaProvider: media.provider,
         })
         .from(posts)
         .leftJoin(media, eq(posts.coverImageId, media.id))
@@ -86,8 +84,18 @@ export const fetchPostWithCategories = async (
         ))
         .limit(1)
         .execute();
+        
     if (postResult.length === 0) throw new Error("Post not found or not yours.");
     const post = postResult[0];
+
+    // Manually construct coverImage object
+    const coverImage = post.mediaId ? {
+        id: post.mediaId,
+        url: post.mediaUrl,
+        type: post.mediaType,
+        altText: post.mediaAltText,
+        provider: post.mediaProvider,
+    } : null;
 
     // Fetch categories
     const cats = await db
@@ -156,7 +164,6 @@ export const fetchPostWithCategories = async (
     let commentReactionCounts: { commentId: string; type: string; count: number }[] = [];
 
     if (commentIds.length > 0) {
-        // Use inArray instead of sql.raw with ANY
         const commentReactionsData = await db
             .select({
                 commentId: commentReactions.commentId,
@@ -254,8 +261,12 @@ export const fetchPostWithCategories = async (
         };
     });
 
+    // Destructure to remove media fields from the final post object
+    const { mediaId, mediaUrl, mediaType, mediaAltText, mediaProvider, ...postWithoutMedia } = post;
+
     return {
-        ...post,
+        ...postWithoutMedia,
+        coverImage, // Add the constructed coverImage object
         categories: cats.map(serializeDocument),
         reactionCounts: reactionCountsFormatted,
         userReactions: userReactionsFormatted,
@@ -264,6 +275,7 @@ export const fetchPostWithCategories = async (
         totalReactions: Object.values(reactionCountsFormatted).reduce((sum, count) => sum + count, 0),
     };
 };
+
 
 export const fetchAllCategories = async (): Promise<CategoryType[]> => {
     const categoriesList = await db
