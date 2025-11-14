@@ -7,9 +7,11 @@ import { eq } from 'drizzle-orm';
 import { logAudit } from '@/actions/logAudit';
 
 export async function POST(req: Request) {
+  console.log('Received Clerk webhook');
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
+    console.warn('Missing CLERK_WEBHOOK_SECRET environment variable');
     throw new Error('Missing CLERK_WEBHOOK_SECRET environment variable');
   }
 
@@ -19,6 +21,7 @@ export async function POST(req: Request) {
   const svix_signature = headerPayload.get('svix-signature');
 
   if (!svix_id || !svix_timestamp || !svix_signature) {
+    console.error('Missing svix headers');
     return new Response('Error: Missing svix headers', { 
       status: 400 
     });
@@ -48,6 +51,7 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   if (eventType === 'user.created') {
+    console.log('Processing user.created event');
     const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
 
     try {
