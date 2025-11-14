@@ -54,7 +54,14 @@ export async function POST(req: Request) {
     console.log('Processing user.created event');
     const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
 
+    console.log('\n\nUser data received:', evt.data);
+    // Check if user already exists
     try {
+      const existingUser = await db.select().from(user).where(eq(user.clerkId, id)).limit(1);
+      if (existingUser.length > 0) {
+        console.log('User already exists, skipping creation:', existingUser[0]?.email);
+        return new Response('User already exists', { status: 200 });
+      }
       const newUser = await db.insert(user).values({
         clerkId: id,
         name: `${first_name ?? ""} ${last_name ?? ""}`.trim(),
